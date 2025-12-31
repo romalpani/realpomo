@@ -1,8 +1,34 @@
 let audioCtx: AudioContext | null = null
+let tickBuffer: AudioBuffer | null = null
+let tickBufferLoading: Promise<AudioBuffer> | null = null
 
 function ctx(): AudioContext {
   if (!audioCtx) audioCtx = new AudioContext()
   return audioCtx
+}
+
+async function loadTickBuffer(): Promise<AudioBuffer> {
+  if (tickBuffer) return tickBuffer
+  if (tickBufferLoading) return tickBufferLoading
+
+  tickBufferLoading = (async () => {
+    try {
+      // Import the WAV file - Vite will handle the asset path
+      const tickUrl = new URL('../assets/relativistic_tick.wav', import.meta.url).href
+      const response = await fetch(tickUrl)
+      const arrayBuffer = await response.arrayBuffer()
+      const buffer = await ctx().decodeAudioData(arrayBuffer)
+      tickBuffer = buffer
+      return buffer
+    } catch (error) {
+      console.error('Failed to load tick sound:', error)
+      throw error
+    } finally {
+      tickBufferLoading = null
+    }
+  })()
+
+  return tickBufferLoading
 }
 
 export function playDoneChime(): void {
@@ -34,42 +60,30 @@ export function playDoneChime(): void {
 }
 
 export function playSetTick(): void {
+  // Load buffer if not already loaded (non-blocking)
+  if (!tickBuffer) {
+    loadTickBuffer()
+      .then(() => {
+        // Buffer loaded, play it now
+        playTickSound()
+      })
+      .catch(() => {
+        // Silently fail if loading fails
+      })
+    return
+  }
+
+  playTickSound()
+}
+
+function playTickSound(): void {
+  if (!tickBuffer) return
+
   const c = ctx()
-  const now = c.currentTime
-
-  // A short, soft mechanical tick: low "thud" + dull noise click.
-  const out = c.createGain()
-  out.gain.setValueAtTime(0.0001, now)
-  out.gain.exponentialRampToValueAtTime(0.10, now + 0.004)
-  out.gain.exponentialRampToValueAtTime(0.0001, now + 0.040)
-  out.connect(c.destination)
-
-  const osc = c.createOscillator()
-  osc.type = 'sine'
-  osc.frequency.setValueAtTime(260, now)
-  osc.frequency.exponentialRampToValueAtTime(70, now + 0.025)
-  osc.connect(out)
-  osc.start(now)
-  osc.stop(now + 0.035)
-
-  const bufferLen = Math.max(1, Math.floor(c.sampleRate * 0.016))
-  const buffer = c.createBuffer(1, bufferLen, c.sampleRate)
-  const data = buffer.getChannelData(0)
-  for (let i = 0; i < bufferLen; i += 1) data[i] = Math.random() * 2 - 1
-
-  const noise = c.createBufferSource()
-  noise.buffer = buffer
-
-  const lp = c.createBiquadFilter()
-  lp.type = 'lowpass'
-  lp.frequency.setValueAtTime(1100, now)
-
-  const ng = c.createGain()
-  ng.gain.setValueAtTime(0.055, now)
-  ng.gain.exponentialRampToValueAtTime(0.0001, now + 0.018)
-
-  noise.connect(lp)
-  lp.connect(ng)
-  ng.connect(out)
-  noise.start(now)
+  const source = c.createBufferSource()
+  source.buffer = tickBuffer
+  
+  // No fades - instant start/stop as per usage tips
+  source.connect(c.destination)
+  source.start(0)
 }

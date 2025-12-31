@@ -24,6 +24,12 @@ const COLORS = {
   INVERT: 'rgba(255,255,255,0.92)'
 }
 
+export type ClockColor = {
+  case: string
+  knob: string
+  sector: string
+}
+
 export function createPomodoroClock(options: ClockOptions) {
   const { host, maxSeconds, getSeconds, setSeconds, start, pause, canEdit, onMinuteStep } = options
 
@@ -38,9 +44,15 @@ export function createPomodoroClock(options: ClockOptions) {
   const clockStack = document.createElement('div')
   clockStack.className = 'clock-stack no-drag'
 
+  let currentColor: ClockColor = {
+    case: COLORS.CASE,
+    knob: COLORS.KNOB,
+    sector: COLORS.SECTOR
+  }
+
   const clockCase = document.createElement('div')
   clockCase.className = 'clock-case'
-  clockCase.style.background = COLORS.CASE
+  clockCase.style.background = currentColor.case
 
   const clockFace = document.createElement('div')
   clockFace.className = 'clock-face'
@@ -99,7 +111,7 @@ export function createPomodoroClock(options: ClockOptions) {
   defs.appendChild(grad)
 
   const sector = document.createElementNS(SVG_NS, 'path')
-  sector.setAttribute('fill', COLORS.SECTOR)
+  sector.setAttribute('fill', currentColor.sector)
 
   // Hand only shows at 00 when nothing is selected.
   // Layered strokes for a subtle liquid-glass look.
@@ -223,13 +235,15 @@ export function createPomodoroClock(options: ClockOptions) {
   knobBase.setAttribute('cx', '50')
   knobBase.setAttribute('cy', '50')
   knobBase.setAttribute('r', '6')
-  knobBase.setAttribute('fill', COLORS.KNOB)
+  knobBase.setAttribute('fill', currentColor.knob)
+  knobBase.setAttribute('data-knob-base', 'true')
 
   const knobHighlight = document.createElementNS(SVG_NS, 'circle')
   knobHighlight.setAttribute('cx', '50')
   knobHighlight.setAttribute('cy', '50')
   knobHighlight.setAttribute('r', '6')
   knobHighlight.setAttribute('fill', 'url(#knobGradient)')
+  knobHighlight.setAttribute('data-knob-highlight', 'true')
 
   svg.appendChild(defs)
   svg.appendChild(sector)
@@ -390,6 +404,72 @@ export function createPomodoroClock(options: ClockOptions) {
     return dist <= hitRadius
   }
 
+  function isCenterHover(ev: PointerEvent | MouseEvent): boolean {
+    const rect = interactive.getBoundingClientRect()
+    const cx = rect.width / 2
+    const cy = rect.height / 2
+    const x = ev.clientX - rect.left - cx
+    const y = ev.clientY - rect.top - cy
+    const dist = Math.hypot(x, y)
+
+    // Use the same hit radius as center press detection
+    const hitRadius = Math.min(rect.width, rect.height) * 0.12
+    return dist <= hitRadius
+  }
+
+  function isHandHover(ev: PointerEvent | MouseEvent): boolean {
+    // Hand is only visible when timer is at 00:00
+    const currentSeconds = getSeconds()
+    if (currentSeconds > 0) return false
+
+    const rect = interactive.getBoundingClientRect()
+    const cx = rect.width / 2
+    const cy = rect.height / 2
+    
+    // Convert pointer position to SVG coordinates (0-100)
+    const svgX = ((ev.clientX - rect.left) / rect.width) * 100
+    const svgY = ((ev.clientY - rect.top) / rect.height) * 100
+    
+    // Hand is a vertical line from center (50, 50) to top (50, 22)
+    const handStartX = 50
+    const handStartY = 50
+    const handEndX = 50
+    const handEndY = 22
+    
+    // Check if pointer is near the hand line
+    // Calculate distance from point to line segment
+    const A = svgX - handStartX
+    const B = svgY - handStartY
+    const C = handEndX - handStartX
+    const D = handEndY - handStartY
+    
+    const dot = A * C + B * D
+    const lenSq = C * C + D * D
+    let param = -1
+    if (lenSq !== 0) param = dot / lenSq
+    
+    let xx: number, yy: number
+    
+    if (param < 0) {
+      xx = handStartX
+      yy = handStartY
+    } else if (param > 1) {
+      xx = handEndX
+      yy = handEndY
+    } else {
+      xx = handStartX + param * C
+      yy = handStartY + param * D
+    }
+    
+    const dx = svgX - xx
+    const dy = svgY - yy
+    const distance = Math.sqrt(dx * dx + dy * dy)
+    
+    // Use a hit radius that scales with the viewBox (roughly 2-3 units)
+    const hitRadius = 2.5
+    return distance <= hitRadius && param >= 0 && param <= 1
+  }
+
   function applyPointer(ev: PointerEvent): void {
     const seconds = secondsFromPointer(ev)
 
@@ -409,13 +489,21 @@ export function createPomodoroClock(options: ClockOptions) {
 
     // Clicking the center knob resets to 00:00.
     if (isCenterPress(ev)) {
+      interactive.classList.add('knob-active')
       pause()
       setSeconds(0)
       update(0)
+      // Set a timeout to remove active state after a brief moment for visual feedback
+      setTimeout(() => {
+        interactive.classList.remove('knob-active')
+      }, 150)
       return
     }
 
+    // Remove any knob/hand states when starting to drag elsewhere
+    interactive.classList.remove('knob-hover', 'knob-active', 'hand-hover')
     dragging = true
+    interactive.classList.add('dragging')
     lastDragAngleDeg = null
     pause()
     interactive.setPointerCapture(ev.pointerId)
@@ -429,6 +517,7 @@ export function createPomodoroClock(options: ClockOptions) {
   }
 
   function onPointerUp(ev: PointerEvent): void {
+    interactive.classList.remove('knob-active', 'dragging')
     if (!dragging) return
     dragging = false
     lastMinute = -1
@@ -445,10 +534,37 @@ export function createPomodoroClock(options: ClockOptions) {
     else pause()
   }
 
+  function onMouseMove(ev: MouseEvent): void {
+    if (!canEdit()) return
+    
+    // Check for center knob hover
+    if (isCenterHover(ev)) {
+      interactive.classList.add('knob-hover')
+      interactive.classList.remove('hand-hover')
+    } else {
+      interactive.classList.remove('knob-hover')
+    }
+    
+    // Check for hand hover (only when hand is visible)
+    if (!interactive.classList.contains('knob-hover')) {
+      if (isHandHover(ev)) {
+        interactive.classList.add('hand-hover')
+      } else {
+        interactive.classList.remove('hand-hover')
+      }
+    }
+  }
+
+  function onMouseLeave(): void {
+    interactive.classList.remove('knob-hover', 'knob-active', 'hand-hover')
+  }
+
   interactive.addEventListener('pointerdown', onPointerDown)
   interactive.addEventListener('pointermove', onPointerMove)
   interactive.addEventListener('pointerup', onPointerUp)
   interactive.addEventListener('pointercancel', onPointerUp)
+  interactive.addEventListener('mousemove', onMouseMove)
+  interactive.addEventListener('mouseleave', onMouseLeave)
 
   update(getSeconds())
 
@@ -458,6 +574,15 @@ export function createPomodoroClock(options: ClockOptions) {
       interactive.style.pointerEvents = next ? 'auto' : 'none'
       interactive.style.opacity = next ? '1' : '0.98'
       for (const btn of quickButtons) btn.disabled = !next
+    },
+    setColor(color: ClockColor) {
+      currentColor = color
+      clockCase.style.background = color.case
+      knobBase.setAttribute('fill', color.knob)
+      sector.setAttribute('fill', color.sector)
+    },
+    getColor(): ClockColor {
+      return { ...currentColor }
     }
   }
 }

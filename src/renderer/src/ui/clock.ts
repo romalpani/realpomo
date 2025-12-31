@@ -311,6 +311,306 @@ export function createPomodoroClock(options: ClockOptions) {
   shell.appendChild(content)
   host.appendChild(shell)
 
+  // Context menu state
+  let showTimer = true
+  let showPresets = true
+
+  // Load saved preferences
+  try {
+    const savedTimer = localStorage.getItem('realpomo:showTimer')
+    const savedPresets = localStorage.getItem('realpomo:showPresets')
+    if (savedTimer !== null) showTimer = savedTimer === 'true'
+    if (savedPresets !== null) showPresets = savedPresets === 'true'
+  } catch {
+    // Ignore localStorage errors
+  }
+
+  // Apply initial visibility
+  function updateVisibility(): void {
+    timeEl.style.display = showTimer ? '' : 'none'
+    quick.style.display = showPresets ? '' : 'none'
+    
+    // Hide display container if both children are hidden
+    if (!showTimer && !showPresets) {
+      display.style.display = 'none'
+      // Ensure no pointer events when hidden
+      display.style.pointerEvents = 'none'
+    } else {
+      display.style.display = ''
+      display.style.pointerEvents = ''
+    }
+  }
+  
+  updateVisibility()
+
+  // Create context menu - append to body to avoid stacking context issues
+  const contextMenu = document.createElement('div')
+  contextMenu.className = 'context-menu no-drag'
+  contextMenu.style.display = 'none'
+  contextMenu.style.zIndex = '10000'
+  contextMenu.style.position = 'fixed'
+  contextMenu.style.pointerEvents = 'none'
+  contextMenu.setAttribute('data-context-menu', 'true')
+  document.body.appendChild(contextMenu)
+
+  function createCheckmarkIcon(): SVGElement {
+    const svg = document.createElementNS(SVG_NS, 'svg')
+    svg.setAttribute('width', '16')
+    svg.setAttribute('height', '16')
+    svg.setAttribute('viewBox', '0 0 24 24')
+    svg.setAttribute('fill', 'none')
+    svg.setAttribute('stroke', 'currentColor')
+    svg.setAttribute('stroke-width', '2.5')
+    svg.setAttribute('stroke-linecap', 'round')
+    svg.setAttribute('stroke-linejoin', 'round')
+    
+    const path = document.createElementNS(SVG_NS, 'path')
+    path.setAttribute('d', 'M20 6L9 17l-5-5')
+    
+    svg.appendChild(path)
+    return svg
+  }
+
+  function createMenuItem(
+    label: string,
+    checked: boolean,
+    onClick: () => void
+  ): HTMLElement {
+    const item = document.createElement('div')
+    item.className = 'context-menu-item'
+    
+    const iconContainer = document.createElement('span')
+    iconContainer.className = 'context-menu-icon'
+    iconContainer.style.width = '16px'
+    iconContainer.style.height = '16px'
+    iconContainer.style.display = 'inline-flex'
+    iconContainer.style.alignItems = 'center'
+    iconContainer.style.justifyContent = 'center'
+    iconContainer.style.marginRight = '8px'
+    
+    if (checked) {
+      const checkIcon = createCheckmarkIcon()
+      iconContainer.appendChild(checkIcon)
+    }
+    
+    const labelEl = document.createElement('span')
+    labelEl.textContent = label
+    
+    item.appendChild(iconContainer)
+    item.appendChild(labelEl)
+    
+    // Use capture phase to ensure we catch the event before anything else
+    item.addEventListener('click', (e) => {
+      e.stopPropagation()
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      onClick()
+      hideContextMenu()
+    }, true)
+    
+    // Also handle mousedown to ensure clicks work
+    item.addEventListener('mousedown', (e) => {
+      e.stopPropagation()
+      e.stopImmediatePropagation()
+    }, true)
+    
+    // Handle mouseup as well
+    item.addEventListener('mouseup', (e) => {
+      e.stopPropagation()
+      e.stopImmediatePropagation()
+    }, true)
+    
+    return item
+  }
+
+  function updateContextMenu(): void {
+    contextMenu.innerHTML = ''
+    
+    const timerItem = createMenuItem('Show Digital Timer', showTimer, () => {
+      showTimer = !showTimer
+      try {
+        localStorage.setItem('realpomo:showTimer', String(showTimer))
+      } catch {
+        // Ignore localStorage errors
+      }
+      updateVisibility()
+    })
+    
+    const presetsItem = createMenuItem('Show Presets', showPresets, () => {
+      showPresets = !showPresets
+      try {
+        localStorage.setItem('realpomo:showPresets', String(showPresets))
+      } catch {
+        // Ignore localStorage errors
+      }
+      updateVisibility()
+    })
+    
+    contextMenu.appendChild(timerItem)
+    contextMenu.appendChild(presetsItem)
+  }
+
+  function showContextMenu(x: number, y: number): void {
+    updateContextMenu()
+    
+    // Ensure menu is always on top with maximum z-index
+    contextMenu.style.zIndex = '10000'
+    contextMenu.style.display = 'block'
+    contextMenu.style.pointerEvents = 'auto'
+    contextMenu.style.position = 'fixed'
+    contextMenu.style.visibility = 'visible'
+    
+    // Position menu, ensuring it stays within viewport
+    const viewportWidth = window.innerWidth
+    const viewportHeight = window.innerHeight
+    
+    // Estimate menu size (will be measured after first render)
+    const estimatedWidth = 180
+    const estimatedHeight = 80
+    
+    let left = x
+    let top = y
+    
+    // Adjust if menu would go off right edge
+    if (left + estimatedWidth > viewportWidth) {
+      left = viewportWidth - estimatedWidth - 8
+    }
+    
+    // Adjust if menu would go off bottom edge
+    if (top + estimatedHeight > viewportHeight) {
+      top = viewportHeight - estimatedHeight - 8
+    }
+    
+    // Ensure menu doesn't go off left or top edges
+    if (left < 8) left = 8
+    if (top < 8) top = 8
+    
+    contextMenu.style.left = `${left}px`
+    contextMenu.style.top = `${top}px`
+    
+    // After positioning, get actual size and adjust if needed
+    requestAnimationFrame(() => {
+      const menuRect = contextMenu.getBoundingClientRect()
+      if (menuRect.right > viewportWidth) {
+        contextMenu.style.left = `${viewportWidth - menuRect.width - 8}px`
+      }
+      if (menuRect.bottom > viewportHeight) {
+        contextMenu.style.top = `${viewportHeight - menuRect.height - 8}px`
+      }
+    })
+  }
+
+  function hideContextMenu(): void {
+    contextMenu.style.display = 'none'
+    contextMenu.style.pointerEvents = 'none'
+  }
+
+  // Helper function to check if click is on clock dial
+  function isClockDialClick(target: EventTarget | null): boolean {
+    if (!target || !(target instanceof Node)) return false
+    
+    const element = target instanceof Element ? target : null
+    if (!element) return false
+    
+    // Check if click is on clock dial elements
+    return (
+      interactive.contains(element) ||
+      clockCase.contains(element) ||
+      clockFace.contains(element) ||
+      svg.contains(element)
+    )
+  }
+
+  // Add right-click handler to shell (everywhere except clock dial)
+  shell.addEventListener('contextmenu', (e) => {
+    // Don't show menu if clicking on clock dial
+    if (isClockDialClick(e.target)) {
+      return
+    }
+    
+    // Don't show menu if clicking on color picker (let it handle its own menu)
+    const target = e.target instanceof Element ? e.target : null
+    if (target && target.closest('.color-picker-container')) {
+      return
+    }
+    
+    e.preventDefault()
+    e.stopPropagation()
+    
+    // Close color picker menu if open (by removing open class and setting aria-hidden)
+    const colorPickerMenu = document.querySelector('.color-picker-menu.open')
+    if (colorPickerMenu) {
+      colorPickerMenu.classList.remove('open')
+      colorPickerMenu.setAttribute('aria-hidden', 'true')
+    }
+    
+    showContextMenu(e.clientX, e.clientY)
+  })
+
+  // Close menu on click outside - use capture phase to catch events before they're blocked
+  document.addEventListener('click', (e) => {
+    const target = e.target instanceof Element ? e.target : null
+    
+    // Don't close if clicking on the context menu itself
+    if (target && contextMenu.contains(target)) {
+      return
+    }
+    
+    // Don't close if clicking on color picker menu
+    if (target && target.closest('.color-picker-menu')) {
+      return
+    }
+    
+    // Close the menu
+    hideContextMenu()
+  }, true) // Use capture phase
+  
+  // Also handle clicks on shell/content areas directly
+  shell.addEventListener('click', (e) => {
+    const target = e.target instanceof Element ? e.target : null
+    
+    // Don't close if clicking on the context menu itself
+    if (target && contextMenu.contains(target)) {
+      return
+    }
+    
+    // Don't close if clicking on clock dial (let clock handle its own clicks)
+    if (isClockDialClick(e.target)) {
+      return
+    }
+    
+    // Don't close if clicking on color picker
+    if (target && target.closest('.color-picker-container')) {
+      return
+    }
+    
+    // Close the menu
+    hideContextMenu()
+  }, true) // Use capture phase
+  
+  document.addEventListener('contextmenu', (e) => {
+    const target = e.target instanceof Element ? e.target : null
+    
+    // Don't close if clicking on color picker
+    if (target && target.closest('.color-picker-container')) {
+      return
+    }
+    
+    // Don't close if clicking on the context menu itself
+    if (target && contextMenu.contains(target)) {
+      return
+    }
+    
+    hideContextMenu()
+  }, true) // Use capture phase
+  
+  // Close menu on escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && contextMenu.style.display !== 'none') {
+      hideContextMenu()
+    }
+  })
+
   const center = 50
   const sectorRadius = 45
 

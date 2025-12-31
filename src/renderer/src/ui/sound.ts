@@ -2,6 +2,10 @@ let audioCtx: AudioContext | null = null
 let tickBuffer: AudioBuffer | null = null
 let tickBufferLoading: Promise<AudioBuffer> | null = null
 
+// Rate limiting for tick sounds - prevent reverb from rapid ticks
+const MIN_TICK_INTERVAL_MS = 60 // Minimum 60ms between ticks
+let lastTickTime = 0
+
 function ctx(): AudioContext {
   if (!audioCtx) audioCtx = new AudioContext()
   return audioCtx
@@ -14,7 +18,7 @@ async function loadTickBuffer(): Promise<AudioBuffer> {
   tickBufferLoading = (async () => {
     try {
       // Import the WAV file - Vite will handle the asset path
-      const tickUrl = new URL('../assets/relativistic_tick.wav', import.meta.url).href
+      const tickUrl = new URL('../assets/clock_tick_extracted.wav', import.meta.url).href
       const response = await fetch(tickUrl)
       const arrayBuffer = await response.arrayBuffer()
       const buffer = await ctx().decodeAudioData(arrayBuffer)
@@ -29,6 +33,10 @@ async function loadTickBuffer(): Promise<AudioBuffer> {
   })()
 
   return tickBufferLoading
+}
+
+function getTickBuffer(): AudioBuffer | null {
+  return tickBuffer
 }
 
 export function playDoneChime(): void {
@@ -60,8 +68,19 @@ export function playDoneChime(): void {
 }
 
 export function playSetTick(): void {
+  const now = performance.now()
+  
+  // Rate limiting - ensure minimum interval between ticks
+  // This prevents reverb-like overlapping when rotating fast
+  if (now - lastTickTime < MIN_TICK_INTERVAL_MS) {
+    return // Skip this tick - too soon after the last one
+  }
+  
+  lastTickTime = now
+  
   // Load buffer if not already loaded (non-blocking)
-  if (!tickBuffer) {
+  const buffer = getTickBuffer()
+  if (!buffer) {
     loadTickBuffer()
       .then(() => {
         // Buffer loaded, play it now
@@ -77,13 +96,19 @@ export function playSetTick(): void {
 }
 
 function playTickSound(): void {
-  if (!tickBuffer) return
+  const buffer = getTickBuffer()
+  if (!buffer) return
 
   const c = ctx()
   const source = c.createBufferSource()
-  source.buffer = tickBuffer
+  source.buffer = buffer
   
-  // No fades - instant start/stop as per usage tips
-  source.connect(c.destination)
+  // Well-oiled ratchet = very soft and subtle (reduced to ~30% of original)
+  const gain = c.createGain()
+  gain.gain.value = 0.3
+  gain.connect(c.destination)
+  
+  // No fades, no reverb, no tail - instant start/stop
+  source.connect(gain)
   source.start(0)
 }

@@ -1,5 +1,19 @@
 import { clamp } from './math'
 import { formatTimerTime } from './time'
+import { playSetTick } from './sound'
+import {
+  createClockworkState,
+  startDrag,
+  updateDrag,
+  snapOnRelease,
+  updateSettle,
+  endDrag,
+  angleToSeconds,
+  secondsToAngle,
+  pointerToAngle,
+  snapToDetent,
+  type ClockworkState
+} from './clockwork'
 
 type ClockOptions = {
   host: HTMLElement
@@ -303,7 +317,16 @@ export function createPomodoroClock(options: ClockOptions) {
   function updateSector(seconds: number): void {
     const t = clamp(seconds, 0, maxSeconds)
     const timeFraction = maxSeconds === 0 ? 0 : t / maxSeconds
-    const angle = timeFraction * 2 * Math.PI
+    let angle = timeFraction * 2 * Math.PI
+    
+    // When dragging or settling, use the display angle (which includes magnet pull or animation)
+    if (dragging || clockworkState.inSettleAnimation) {
+      angle = clockworkState.angleDisplay
+    } else {
+      // When not dragging, snap to nearest detent for realistic clock feel
+      angle = snapToDetent(angle)
+    }
+    
     const endX = center + sectorRadius * Math.sin(angle)
     const endY = center - sectorRadius * Math.cos(angle)
     const largeArcFlag = angle > Math.PI ? 1 : 0
@@ -329,65 +352,55 @@ export function createPomodoroClock(options: ClockOptions) {
 
   function update(seconds: number): void {
     timeEl.textContent = formatTimerTime(seconds)
+    
+    // Update clockwork state when timer updates externally (not during drag)
+    if (!dragging) {
+      const angle = secondsToAngle(seconds, maxSeconds)
+      clockworkState.angleRaw = angle
+      // Snap display angle to detent for realistic feel
+      clockworkState.angleDisplay = snapToDetent(angle)
+      clockworkState.detentIndexCommitted = Math.floor(angle / ((2 * Math.PI) / 60) + 0.5)
+      clockworkState.detentIndexNearest = Math.round(angle / ((2 * Math.PI) / 60))
+    }
+    
     updateSector(seconds)
   }
 
   let dragging = false
   let lastMinute = -1
-
-  let lastDragAngleDeg: number | null = null
-  let unwrappedDragAngleDeg = 0
-
-  function clockAngleFromPointer(ev: PointerEvent): number {
-    const rect = interactive.getBoundingClientRect()
-    const cx = rect.width / 2
-    const cy = rect.height / 2
-    const x = ev.clientX - rect.left - cx
-    const y = ev.clientY - rect.top - cy
-
-    const angleRad = Math.atan2(y, x)
-    const angleDeg = (angleRad * 180) / Math.PI
-    let clockAngle = angleDeg + 90
-    if (clockAngle < 0) clockAngle += 360
-    return clockAngle
+  let rafId: number | null = null
+  
+  // Clockwork interaction state
+  const clockworkState = createClockworkState()
+  
+  // Animation loop for settle animation
+  function animateSettle(): void {
+    if (updateSettle(clockworkState)) {
+      // Still animating - update display
+      const seconds = angleToSeconds(clockworkState.angleDisplay, maxSeconds)
+      const clampedSeconds = clamp(seconds, 0, maxSeconds)
+      setSeconds(clampedSeconds)
+      // Update display directly (bypass clockwork state update in update function)
+      timeEl.textContent = formatTimerTime(clampedSeconds)
+      updateSector(clampedSeconds)
+      rafId = requestAnimationFrame(animateSettle)
+    } else {
+      // Animation complete
+      rafId = null
+      // Final update to sync everything
+      const finalSeconds = angleToSeconds(clockworkState.angleDisplay, maxSeconds)
+      const clampedSeconds = clamp(finalSeconds, 0, maxSeconds)
+      setSeconds(clampedSeconds)
+      update(clampedSeconds)
+    }
   }
 
-  function secondsFromPointer(ev: PointerEvent): number {
-    const angleDeg = clockAngleFromPointer(ev)
 
-    // When maxSeconds is a full hour (or any full-range max), we don't want the user
-    // to be able to "lap" past the top (12 o'clock) and wrap back to 00.
-    // Track an unwrapped angle while dragging and clamp it to [0, 360].
-    if (!dragging) {
-      const seconds = clamp(Math.round((angleDeg / 360) * maxSeconds), 0, maxSeconds)
-      return seconds
+  function getCenter(rect: DOMRect): { x: number; y: number } {
+    return {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2
     }
-
-    if (lastDragAngleDeg === null) {
-      lastDragAngleDeg = angleDeg
-
-      // Snap a tiny zone around 12 o'clock to avoid accidental selection of max.
-      // Important: keep the rest of the dial "direct-click" accurate (e.g. 55m).
-      const snapBandDeg = 10
-      const inTopSnapBand = angleDeg <= snapBandDeg || angleDeg >= 360 - snapBandDeg
-
-      if (inTopSnapBand) {
-        const currentSeconds = clamp(getSeconds(), 0, maxSeconds)
-        const snapToMaxThresholdSeconds = Math.max(0, maxSeconds - 5 * 60)
-        unwrappedDragAngleDeg = currentSeconds >= snapToMaxThresholdSeconds ? 360 : 0
-      } else {
-        unwrappedDragAngleDeg = angleDeg
-      }
-    } else {
-      let delta = angleDeg - lastDragAngleDeg
-      if (delta > 180) delta -= 360
-      if (delta < -180) delta += 360
-      unwrappedDragAngleDeg = clamp(unwrappedDragAngleDeg + delta, 0, 360)
-      lastDragAngleDeg = angleDeg
-    }
-
-    const seconds = clamp(Math.round((unwrappedDragAngleDeg / 360) * maxSeconds), 0, maxSeconds)
-    return seconds
   }
 
   function isCenterPress(ev: PointerEvent): boolean {
@@ -471,16 +484,42 @@ export function createPomodoroClock(options: ClockOptions) {
   }
 
   function applyPointer(ev: PointerEvent): void {
-    const seconds = secondsFromPointer(ev)
-
-    const minute = Math.floor(seconds / 60)
+    const rect = interactive.getBoundingClientRect()
+    const center = getCenter(rect)
+    
+    // Update clockwork state during drag
+    // Returns true if a minute marker was crossed
+    const minuteCrossed = updateDrag(
+      clockworkState,
+      ev.clientX,
+      ev.clientY,
+      center.x,
+      center.y,
+      maxSeconds
+    )
+    
+    // Play sound when crossing a minute marker during drag
+    if (minuteCrossed) {
+      playSetTick()
+      const currentSeconds = angleToSeconds(clockworkState.angleDisplay, maxSeconds)
+      const currentMinute = Math.floor(currentSeconds / 60)
+      if (currentMinute !== lastMinute) {
+        onMinuteStep?.(currentMinute)
+        lastMinute = currentMinute
+      }
+    }
+    
+    // Update seconds from display angle (magnetized during drag)
+    const seconds = angleToSeconds(clockworkState.angleDisplay, maxSeconds)
+    const clampedSeconds = clamp(seconds, 0, maxSeconds)
+    
+    const minute = Math.floor(clampedSeconds / 60)
     if (minute !== lastMinute) {
-      onMinuteStep?.(minute)
       lastMinute = minute
     }
-
-    setSeconds(seconds)
-    update(seconds)
+    
+    setSeconds(clampedSeconds)
+    update(clampedSeconds)
   }
 
   function onPointerDown(ev: PointerEvent): void {
@@ -493,6 +532,10 @@ export function createPomodoroClock(options: ClockOptions) {
       pause()
       setSeconds(0)
       update(0)
+      // Reset clockwork state
+      clockworkState.angleRaw = 0
+      clockworkState.angleDisplay = 0
+      clockworkState.inSettleAnimation = false
       // Set a timeout to remove active state after a brief moment for visual feedback
       setTimeout(() => {
         interactive.classList.remove('knob-active')
@@ -502,9 +545,18 @@ export function createPomodoroClock(options: ClockOptions) {
 
     // Remove any knob/hand states when starting to drag elsewhere
     interactive.classList.remove('knob-hover', 'knob-active', 'hand-hover')
+    
+    const rect = interactive.getBoundingClientRect()
+    const center = getCenter(rect)
+    const currentAngle = secondsToAngle(getSeconds(), maxSeconds)
+    
+    // Try to start clockwork drag (checks deadzone)
+    if (!startDrag(clockworkState, ev.clientX, ev.clientY, center.x, center.y, currentAngle, maxSeconds)) {
+      return // Deadzone - don't start drag
+    }
+    
     dragging = true
     interactive.classList.add('dragging')
-    lastDragAngleDeg = null
     pause()
     interactive.setPointerCapture(ev.pointerId)
     applyPointer(ev)
@@ -519,9 +571,23 @@ export function createPomodoroClock(options: ClockOptions) {
   function onPointerUp(ev: PointerEvent): void {
     interactive.classList.remove('knob-active', 'dragging')
     if (!dragging) return
+    
+    // Snap smoothly to nearest detent on release
+    const { angle: snappedAngle, shouldPlaySound } = snapOnRelease(clockworkState, maxSeconds)
+    
+    // Play sound only if snapping forward to a minute not yet crossed
+    if (shouldPlaySound) {
+      playSetTick()
+    }
+    
+    // Start smooth settle animation
+    if (rafId === null) {
+      rafId = requestAnimationFrame(animateSettle)
+    }
+    
+    endDrag(clockworkState)
     dragging = false
     lastMinute = -1
-    lastDragAngleDeg = null
 
     try {
       interactive.releasePointerCapture(ev.pointerId)
@@ -529,9 +595,17 @@ export function createPomodoroClock(options: ClockOptions) {
       // ignore
     }
 
-    const seconds = getSeconds()
-    if (seconds > 0) start()
-    else pause()
+    // Wait for settle animation to complete before starting timer
+    const checkSettle = () => {
+      if (!clockworkState.inSettleAnimation) {
+        const seconds = getSeconds()
+        if (seconds > 0) start()
+        else pause()
+      } else {
+        requestAnimationFrame(checkSettle)
+      }
+    }
+    requestAnimationFrame(checkSettle)
   }
 
   function onMouseMove(ev: MouseEvent): void {

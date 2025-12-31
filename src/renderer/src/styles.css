@@ -1,0 +1,191 @@
+:root {
+  --text: rgba(245, 245, 245, 0.92);
+  --shadow: rgba(0, 0, 0, 0.12);
+  --green: #0d4b2a;
+  --case: #8ec3a0;
+  --case-2: #7ab892;
+  --white: #ffffff;
+
+  /* Shared surface color used by the dial (clock face). */
+  --dial-bg: var(--white);
+
+  --unit-radius: 18px;
+
+  --pad: 0px;
+  --chrome-h: 0px;
+  --controls-h: 132px;
+  --glass: rgba(0, 0, 0, 0.28);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --glass-shadow: rgba(0, 0, 0, 0.22);
+  /* Keep the surface untinted; rely on blur + border + shadow for "liquid glass". */
+  --glass-surface: transparent;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+    "Apple Color Emoji", "Segoe UI Emoji";
+  background: var(--dial-bg);
+  color: var(--text);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#app {
+  height: 100%;
+  padding: 0;
+  display: grid;
+  place-items: stretch;
+  overflow: hidden;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+.shell {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--unit-radius);
+  background: var(--glass-surface);
+  border: none;
+  box-shadow: none;
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+  padding: var(--pad);
+  transition: box-shadow 180ms ease, border-color 180ms ease;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  -webkit-app-region: drag;
+}
+
+.shell::after {
+  content: none;
+}
+
+.shell-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clock-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.clock-case {
+  height: min(400px, calc(100vh - (var(--pad) * 2) - var(--controls-h)));
+  width: auto;
+  aspect-ratio: 1 / 1;
+  border-radius: 22%;
+  position: relative;
+  box-shadow:
+    inset 3px 3px 6px rgba(255, 255, 255, 0.2),
+    inset -3px -3px 6px rgba(0, 0, 0, 0.2),
+    10px 10px 26px rgba(0, 0, 0, 0.35);
+  transition: transform 140ms ease;
+}
+
+.clock-face {
+  position: absolute;
+  inset: 6%;
+  border-radius: 20%;
+  background: var(--dial-bg);
+  overflow: hidden;
+  display: grid;
+  place-items: stretch;
+  box-shadow: inset 2px 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.clock-interactive {
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.clock-interactive svg {
+  width: 100%;
+  height: 100%;
+}
+
+.timer-display {
+  text-align: center;
+  display: grid;
+  gap: 10px;
+}
+
+.timer-time {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  color: rgba(0, 0, 0, 0.78);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 46px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.timer-quick {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.timer-quick-btn {
+  appearance: none;
+  border: none;
+  padding: 7px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.40);
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  color: rgba(0, 0, 0, 0.72);
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 1;
+  transition: background-color 140ms ease, transform 140ms ease, opacity 140ms ease;
+}
+
+.timer-quick-btn:hover {
+  background: rgba(255, 255, 255, 0.54);
+}
+
+.timer-quick-btn:active {
+  transform: translateY(1px);
+}
+
+.timer-quick-btn:disabled {
+  opacity: 0.55;
+}
+
+body.done .shell {
+  box-shadow:
+    0 18px 40px var(--shadow),
+    0 0 0 6px rgba(13, 75, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell {
+    transition: none;
+  }
+}

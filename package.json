@@ -59,5 +59,8 @@
         "nsis"
       ]
     }
+  },
+  "dependencies": {
+    "lucide": "^0.562.0"
   }
 }

@@ -1,24 +1,72 @@
 # RealPomo
 
-Minimal Pomodoro-style timer inspired by the physical Time Timer dial.
+A minimal Pomodoro-style timer desktop app inspired by the physical Time Timer dial. RealPomo provides a beautiful, distraction-free visual timer with an intuitive circular interface that shows remaining time at a glance.
 
-## Dev
+## Features
 
-- `npm install`
-- `npm run dev`
+### Visual Timer Interface
+- **Circular dial design** - Inspired by the Time Timer, featuring a visual countdown sector that shrinks as time elapses
+- **Drag to set time** - Click and drag around the dial to set your desired timer duration (up to 60 minutes)
+- **Quick presets** - One-click buttons for common durations: 5m, 15m, 25m, 45m, and 60m
+- **Center knob reset** - Click the center knob to reset the timer to 00:00
+- **Minute markers** - Clear visual indicators every 5 minutes for easy time selection
 
-## Quality
+### User Experience
+- **Audio feedback** - Subtle tick sounds when adjusting the timer, and a pleasant chime when the timer completes
+- **Desktop notifications** - System notification when your timer finishes ("Nice work. Take a breath.")
+- **Visual completion** - Brief visual feedback when the timer reaches zero
+- **Smooth animations** - Real-time updates using requestAnimationFrame for fluid countdown
 
-- Typecheck: `npm run typecheck`
-- Lint: `npm run lint` (autofix: `npm run lint:fix`)
-- Format: `npm run format` (check only: `npm run format:check`)
-- Unit tests: `npm run test:unit` (watch: `npm run test:unit:watch`, coverage: `npm run test:unit:coverage`)
-- E2E smoke test (builds app bundles first): `npm run test:e2e`
+### Desktop App Features
+- **Native window** - Transparent window with vibrancy effects (macOS) and Mica material (Windows 11+)
+- **Single instance** - Only one window can be open at a time; reopening focuses the existing window
+- **Compact size** - Small, focused window (440×580px) that stays out of your way
+- **Cross-platform** - Works on macOS and Windows
 
-## Build (macOS / Windows)
+## How to Use
 
-- `npm run build`
+1. **Set the timer**: Click and drag around the dial, or use the quick preset buttons (5m, 15m, 25m, 45m, 60m)
+2. **Start**: The timer automatically starts when you set a duration greater than zero
+3. **Pause/Resume**: Click the dial while running to pause; click again to resume
+4. **Reset**: Click the center knob to reset to 00:00
+5. **Completion**: When the timer reaches zero, you'll hear a chime and receive a desktop notification
 
-## Build (bundles only)
+## Development
 
-- `npm run build:app`
+### Setup
+```bash
+npm install
+npm run dev
+```
+
+### Quality Checks
+- **Typecheck**: `npm run typecheck`
+- **Lint**: `npm run lint` (autofix: `npm run lint:fix`)
+- **Format**: `npm run format` (check only: `npm run format:check`)
+- **Unit tests**: `npm run test:unit` (watch: `npm run test:unit:watch`, coverage: `npm run test:unit:coverage`)
+- **E2E smoke test** (builds app bundles first): `npm run test:e2e`
+
+## Build
+
+### Production Build (macOS / Windows)
+```bash
+npm run build
+```
+
+### Development Build (bundles only)
+```bash
+npm run build:app
+```
+
+## Technology Stack
+
+- **Electron** - Cross-platform desktop framework
+- **Vite** - Fast build tool and dev server
+- **TypeScript** - Type-safe development
+- **Vitest** - Unit testing
+- **Playwright** - E2E testing
+- **Web Audio API** - Audio feedback generation
+
+## License
+
+Private project.

@@ -38,6 +38,7 @@ jobs:
         run: npm run build:app
 
       - name: Build distributable
+        shell: bash
         env:
           # Disable electron-builder auto-publish (we handle releases in a separate job)
           PUBLISH_FOR_PULL_REQUEST: false
@@ -61,7 +62,9 @@ jobs:
             export APPLE_ID_PASS="${{ secrets.APPLE_ID_PASS }}"
             export APPLE_TEAM_ID="${{ secrets.APPLE_TEAM_ID }}"
           fi
-          npm run build
+          # Explicitly disable publishing with --publish never flag
+          # Note: build:app was already run in the previous step
+          npx electron-builder --publish never
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -83,20 +86,50 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: mac-build
-          path: release/mac
+          path: release/
 
       - name: Download Windows artifacts
         uses: actions/download-artifact@v4
         with:
           name: win-build
-          path: release/win
+          path: release/
+
+      - name: Validate release artifacts
+        shell: bash
+        run: |
+          echo "Checking for release artifacts..."
+          
+          # Check for macOS DMG files (should have both arm64 and x64)
+          DMG_COUNT=$(find release -name "*.dmg" -type f 2>/dev/null | wc -l | tr -d ' ')
+          if [ "$DMG_COUNT" -eq 0 ]; then
+            echo "❌ Error: No DMG files found in release/"
+            exit 1
+          fi
+          echo "✅ Found $DMG_COUNT DMG file(s)"
+          find release -name "*.dmg" -type f -exec ls -lh {} \;
+          
+          # Check for Windows installer files (if Windows build succeeded)
+          if find release -name "*.exe" -type f 2>/dev/null | grep -q .; then
+            EXE_COUNT=$(find release -name "*.exe" -type f 2>/dev/null | wc -l | tr -d ' ')
+            echo "✅ Found $EXE_COUNT Windows installer file(s)"
+            find release -name "*.exe" -type f -exec ls -lh {} \;
+          else
+            echo "⚠️  No Windows installer files found (Windows build may have failed or not completed)"
+          fi
+          
+          # List all release files for debugging
+          echo ""
+          echo "All release files:"
+          find release -type f -exec ls -lh {} \;
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            release/mac/**
-            release/win/**
+            release/*.dmg
+            release/*.exe
+            release/*.zip
+            release/*.blockmap
           generate_release_notes: true
           draft: false
           prerelease: false

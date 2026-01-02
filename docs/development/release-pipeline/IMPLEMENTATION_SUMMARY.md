@@ -156,7 +156,7 @@ Before your first release, verify:
 - `docs/index.html`
 - `docs/styles.css`
 - `docs/app.js`
-- `RELEASE_PIPELINE/` (documentation)
+- `docs/development/release-pipeline/` (documentation)
 
 ### Modified:
 - `package.json` (DMG config, release script)

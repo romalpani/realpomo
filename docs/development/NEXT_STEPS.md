@@ -20,7 +20,7 @@ git add .github/
 git add build/
 git add docs/
 git add scripts/
-git add RELEASE_PIPELINE/
+git add docs/development/
 git add package.json
 git add README.md
 

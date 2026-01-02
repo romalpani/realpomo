@@ -107,6 +107,7 @@ a:focus-visible {
   flex-direction: column;
   align-items: center;
   gap: 12px;
+  margin-top: 48px;
 }
 
 /* Buttons */
@@ -171,6 +172,14 @@ a:focus-visible {
 
 .btn-secondary.hidden {
   display: none;
+}
+
+.security-note {
+  margin: 16px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.5;
 }
 
 .oss-button-wrapper {

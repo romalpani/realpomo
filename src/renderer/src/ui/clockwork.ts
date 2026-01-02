@@ -5,8 +5,6 @@
  * velocity-sensitive behavior, and micro-settle animation.
  */
 
-import { clamp } from './math'
-
 // Tunable parameters
 const STEPS = 60 // Detents per full revolution
 const STEP_RAD = (2 * Math.PI) / STEPS
@@ -25,11 +23,6 @@ function clamp01(x: number): number {
 function smoothstep(t: number): number {
   const clamped = clamp01(t)
   return clamped * clamped * (3 - 2 * clamped)
-}
-
-function easeOutCubic(p: number): number {
-  const clamped = clamp01(p)
-  return 1 - Math.pow(1 - clamped, 3)
 }
 
 function easeOutQuart(p: number): number {

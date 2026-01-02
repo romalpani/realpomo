@@ -1,7 +1,8 @@
 import type { ClockColor } from './clock'
 
 export const COLOR_PRESETS: ClockColor[] = [
-  { case: '#7AB58E', knob: '#7BB68F', sector: '#1D5D3B' }, // Sage green (default)
+  { case: '#FF6347', knob: '#FF7055', sector: '#CC4F38' }, // Tomato red (logo color, default)
+  { case: '#7AB58E', knob: '#7BB68F', sector: '#1D5D3B' }, // Sage green
   { case: '#C9B99B', knob: '#D4C5A9', sector: '#8B6F47' }, // Warm beige
   { case: '#9DB4C0', knob: '#A8C0CC', sector: '#5A7A8A' }, // Soft blue
   { case: '#B0B0B0', knob: '#B8B8B8', sector: '#6B6B6B' }  // Muted gray
@@ -131,12 +132,14 @@ export function createColorPicker(options: ColorPickerOptions): HTMLElement {
       option.classList.add('selected')
     }
 
-    option.addEventListener('click', () => {
+    option.addEventListener('click', (e) => {
+      e.stopPropagation()
+      e.stopImmediatePropagation()
       selectColor(color)
       // Update selected state efficiently
       colorOptionButtons.forEach((opt) => opt.classList.remove('selected'))
       option.classList.add('selected')
-    })
+    }, true) // Use capture phase to ensure we catch it before other handlers
 
     colorOptionButtons.push(option)
     menu.appendChild(option)

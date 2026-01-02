@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  
+  <!-- Primary Meta Tags -->
+  <title>realpomo — Focus that feels physical</title>
+  <meta name="title" content="realpomo — Focus that feels physical" />
+  <meta name="description" content="A tactile Pomodoro timer for your desktop. Drag the dial, hear the click, and stay in flow. Open source." />
+  <meta name="theme-color" content="#ff6347" />
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://romalpani.github.io/realpomo/" />
+  <meta property="og:title" content="realpomo — Focus that feels physical" />
+  <meta property="og:description" content="A tactile Pomodoro timer for your desktop. Drag the dial, hear the click, and stay in flow. Open source." />
+  <meta property="og:image" content="https://romalpani.github.io/realpomo/app-1.png" />
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://romalpani.github.io/realpomo/" />
+  <meta property="twitter:title" content="realpomo — Focus that feels physical" />
+  <meta property="twitter:description" content="A tactile Pomodoro timer for your desktop. Drag the dial, hear the click, and stay in flow. Open source." />
+  <meta property="twitter:image" content="https://romalpani.github.io/realpomo/app-1.png" />
+  
+  <!-- Security -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.github.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="X-Frame-Options" content="DENY" />
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+  
+  <!-- Icons -->
+  <link rel="icon" href="icon.png" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  
+  <!-- Preload critical resources -->
+  <link rel="preload" href="styles.css" as="style" />
+  <link rel="preload" href="app.js" as="script" />
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="timer-web.css" />
+  
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "realpomo",
+    "description": "A tactile Pomodoro timer for your desktop. Drag the dial, hear the click, and stay in flow.",
+    "applicationCategory": "ProductivityApplication",
+    "operatingSystem": "macOS",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Rohan Malpani"
+    },
+    "url": "https://github.com/romalpani/realpomo"
+  }
+  </script>
+</head>
+
+<body>
+  <div class="wrap">
+    <header class="nav" role="banner">
+      <div class="brand">
+        <img src="icon.png" alt="realpomo logo" width="28" height="28" />
+        <span>realpomo</span>
+      </div>
+
+      <nav class="navlinks" aria-label="Primary navigation">
+        <a href="#features">Features</a>
+        <a href="#feel">The feel</a>
+        <a href="#open-source">Open source</a>
+      </nav>
+    </header>
+
+    <main role="main">
+      <div class="hero">
+        <h1>Focus that feels physical.</h1>
+        <p class="sub">
+          realpomo brings the iconic kitchen timer to your desktop — drag the hand, hear the click,
+          and stay in flow.
+        </p>
+        <a id="download-btn" class="btn" href="https://github.com/romalpani/realpomo/releases/latest" target="_blank" rel="noopener noreferrer" aria-label="Download latest version">
+          Download <span id="version" aria-label="Version number"></span>
+        </a>
+        <div class="hero-image" id="timer-container" aria-label="Interactive timer demonstration">
+          <!-- Timer will be injected here -->
+        </div>
+      </div>
+
+      <section id="features" aria-labelledby="features-heading">
+        <div class="feature-section">
+          <div class="feature-content">
+            <h2 id="features-heading">Pomodoro timer with physical feel</h2>
+            <h3>Pomodoro timer</h3>
+            <p>Classic focus + break cycles, with a dial you can set in seconds.</p>
+            <h3>Physical-object feel</h3>
+            <p>Drag the hand to set time. Subtle clicks and "gear" pacing make it feel real.</p>
+          </div>
+          <div class="feature-image">
+            <img src="app-2.png" alt="Pomodoro timer with physical dial interface showing time selection" width="500" height="500" loading="lazy" />
+          </div>
+        </div>
+
+        <div class="feature-section reverse">
+          <div class="feature-content">
+            <h2>Quick presets, flexible display</h2>
+            <h3>Presets</h3>
+            <p>Jump in with 5/10/25/50 minute options — perfect for changing contexts fast.</p>
+            <h3>Hide/show digital timer</h3>
+            <p>Go full analog when you want less pressure — or keep the digits for precision.</p>
+          </div>
+          <div class="feature-image">
+            <img src="app-5.png" alt="Timer interface showing presets and digital display toggle options" width="500" height="500" loading="lazy" />
+          </div>
+        </div>
+      </section>
+
+      <section id="feel" aria-labelledby="feel-heading">
+        <div class="section-head">
+          <h2 id="feel-heading">Looks like a product, feels like a tool</h2>
+          <p>
+            These timers exist as physical objects. realpomo keeps that intuition — the dial is the UI.
+          </p>
+          <h3 style="margin-top:32px; font-size:20px; letter-spacing:-.02em">Small details, big impact</h3>
+          <p style="margin-top:8px">
+            The "physical" feel isn't decoration — it's a usability shortcut. When setting time is embodied,
+            you spend less attention on the timer and more on the task.
+          </p>
+        </div>
+
+        <div class="showcase" role="group" aria-label="Application screenshots">
+          <div class="shot">
+            <img src="app-1.png" alt="realpomo timer interface showing analog dial" width="400" height="400" loading="lazy" />
+          </div>
+          <div class="shot">
+            <img src="app-3.png" alt="realpomo timer with custom theme example" width="400" height="400" loading="lazy" />
+          </div>
+          <div class="shot">
+            <img src="app-4.png" alt="realpomo timer with alternate color theme" width="400" height="400" loading="lazy" />
+          </div>
+        </div>
+      </section>
+
+      <section id="open-source" aria-labelledby="oss-heading">
+        <div class="section-head">
+          <h2 id="oss-heading">Open source, by design</h2>
+          <p>
+            If you like tools you can trust and tweak, this is for you.
+            Star it, fork it, or use it as a clean reference implementation.
+          </p>
+        </div>
+
+        <div class="oss-content">
+          <p style="margin-top:24px">
+            <a class="btn" href="https://github.com/romalpani/realpomo" target="_blank" rel="noopener noreferrer" aria-label="View realpomo on GitHub">
+              View on GitHub
+            </a>
+          </p>
+        </div>
+      </section>
+
+      <footer role="contentinfo">
+        <div>Inspired by real toddler timer, vibed by Rohan Malpani</div>
+      </footer>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+  <script src="timer-web.js" defer></script>
+  <script>
+    // Set current year (if element exists)
+    (function() {
+      'use strict';
+      var yearEl = document.getElementById("year");
+      if (yearEl) {
+        yearEl.textContent = new Date().getFullYear();
+      }
+      
+      // Initialize timer when DOM is ready
+      document.addEventListener('DOMContentLoaded', function() {
+        var container = document.getElementById('timer-container');
+        if (container && typeof window.initTimer === 'function') {
+          window.initTimer(container, {
+            maxSeconds: 3600,
+            initialSeconds: 0,
+            enableSounds: true,
+            showPresets: true,
+            showDigital: true
+          });
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -66,6 +66,11 @@ jobs:
           # Note: build:app was already run in the previous step
           npx electron-builder --publish never
 
+      - name: Remove quarantine attributes (macOS only)
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: node scripts/remove-quarantine.js
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

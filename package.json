@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build:app": "electron-vite build",
-    "build": "electron-vite build && electron-builder",
+    "build": "electron-vite build && electron-builder && node scripts/remove-quarantine.js",
     "preview": "electron-vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint . --ext .ts",

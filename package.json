@@ -19,7 +19,8 @@
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "test:unit:coverage": "vitest run --coverage",
-    "test:e2e": "npm run build:app && playwright test"
+    "test:e2e": "npm run build:app && playwright test",
+    "release": "node scripts/release.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.50.0",
@@ -42,6 +43,7 @@
   "build": {
     "appId": "com.realpomo.app",
     "productName": "RealPomo",
+    "icon": "build/icon.png",
     "directories": {
       "output": "release"
     },
@@ -50,14 +52,25 @@
     ],
     "mac": {
       "target": [
-        "zip"
+        {
+          "target": "dmg",
+          "arch": ["arm64", "x64"]
+        }
       ],
       "category": "public.app-category.productivity"
     },
     "win": {
       "target": [
-        "nsis"
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        }
       ]
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "romalpani",
+      "repo": "realpomo"
     }
   },
   "dependencies": {

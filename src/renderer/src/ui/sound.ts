@@ -39,32 +39,41 @@ function getTickBuffer(): AudioBuffer | null {
   return tickBuffer
 }
 
-export function playDoneChime(): void {
+function playSingleChime(startTime: number): void {
   const c = ctx()
-  const now = c.currentTime
 
   const gain = c.createGain()
-  gain.gain.setValueAtTime(0.0001, now)
-  gain.gain.exponentialRampToValueAtTime(0.12, now + 0.015)
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.9)
+  gain.gain.setValueAtTime(0.0001, startTime)
+  gain.gain.exponentialRampToValueAtTime(0.12, startTime + 0.015)
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.9)
   gain.connect(c.destination)
 
   const osc1 = c.createOscillator()
   osc1.type = 'sine'
-  osc1.frequency.setValueAtTime(660, now)
-  osc1.frequency.exponentialRampToValueAtTime(880, now + 0.18)
+  osc1.frequency.setValueAtTime(660, startTime)
+  osc1.frequency.exponentialRampToValueAtTime(880, startTime + 0.18)
   osc1.connect(gain)
 
   const osc2 = c.createOscillator()
   osc2.type = 'triangle'
-  osc2.frequency.setValueAtTime(440, now + 0.12)
-  osc2.frequency.exponentialRampToValueAtTime(660, now + 0.32)
+  osc2.frequency.setValueAtTime(440, startTime + 0.12)
+  osc2.frequency.exponentialRampToValueAtTime(660, startTime + 0.32)
   osc2.connect(gain)
 
-  osc1.start(now)
-  osc2.start(now + 0.12)
-  osc1.stop(now + 0.55)
-  osc2.stop(now + 0.85)
+  osc1.start(startTime)
+  osc2.start(startTime + 0.12)
+  osc1.stop(startTime + 0.55)
+  osc2.stop(startTime + 0.85)
+}
+
+export function playDoneChime(): void {
+  const c = ctx()
+  const now = c.currentTime
+
+  // Play 3 beeps with 1 second spacing between them
+  playSingleChime(now)
+  playSingleChime(now + 1.0)
+  playSingleChime(now + 2.0)
 }
 
 export function playSetTick(): void {

@@ -10,9 +10,7 @@ import {
   endDrag,
   angleToSeconds,
   secondsToAngle,
-  pointerToAngle,
-  snapToDetent,
-  type ClockworkState
+  snapToDetent
 } from './clockwork'
 
 type ClockOptions = {
@@ -284,7 +282,7 @@ export function createPomodoroClock(options: ClockOptions) {
   const quick = document.createElement('div')
   quick.className = 'timer-quick'
 
-  const quickMins = [5, 15, 25, 45, 60]
+  const quickMins = [5, 10, 25, 50]
   const quickButtons: HTMLButtonElement[] = []
   for (const min of quickMins) {
     const btn = document.createElement('button')
@@ -556,8 +554,8 @@ export function createPomodoroClock(options: ClockOptions) {
       return
     }
     
-    // Don't close if clicking on color picker menu
-    if (target && target.closest('.color-picker-menu')) {
+    // Don't close if clicking on color picker menu or any color picker option
+    if (target && (target.closest('.color-picker-menu') || target.closest('.color-picker-option') || target.closest('.color-picker-container'))) {
       return
     }
     
@@ -579,8 +577,8 @@ export function createPomodoroClock(options: ClockOptions) {
       return
     }
     
-    // Don't close if clicking on color picker
-    if (target && target.closest('.color-picker-container')) {
+    // Don't close if clicking on color picker or its options
+    if (target && (target.closest('.color-picker-container') || target.closest('.color-picker-menu') || target.closest('.color-picker-option'))) {
       return
     }
     
@@ -736,8 +734,6 @@ export function createPomodoroClock(options: ClockOptions) {
     if (currentSeconds > 0) return false
 
     const rect = interactive.getBoundingClientRect()
-    const cx = rect.width / 2
-    const cy = rect.height / 2
     
     // Convert pointer position to SVG coordinates (0-100)
     const svgX = ((ev.clientX - rect.left) / rect.width) * 100
@@ -873,7 +869,7 @@ export function createPomodoroClock(options: ClockOptions) {
     if (!dragging) return
     
     // Snap smoothly to nearest detent on release
-    const { angle: snappedAngle, shouldPlaySound } = snapOnRelease(clockworkState, maxSeconds)
+    const { shouldPlaySound } = snapOnRelease(clockworkState, maxSeconds)
     
     // Play sound only if snapping forward to a minute not yet crossed
     if (shouldPlaySound) {

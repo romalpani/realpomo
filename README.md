@@ -2,12 +2,30 @@
 
 A minimal Pomodoro-style timer desktop app inspired by the physical Time Timer dial. RealPomo provides a beautiful, distraction-free visual timer with an intuitive circular interface that shows remaining time at a glance.
 
+## Download
+
+### Latest Release
+Download the latest version from our [website](https://romalpani.github.io/realpomo) or directly from [GitHub Releases](https://github.com/romalpani/realpomo/releases/latest).
+
+### System Requirements
+- **macOS**: 10.13 (High Sierra) or later
+- **Windows**: Windows 10 or later
+
+### Installation
+1. Download the DMG (macOS) or installer (Windows) from the latest release
+2. Open the downloaded file
+3. For macOS: Drag RealPomo to your Applications folder
+4. For Windows: Run the installer and follow the prompts
+5. Launch RealPomo from Applications/Start Menu
+
+[View all releases →](https://github.com/romalpani/realpomo/releases)
+
 ## Features
 
 ### Visual Timer Interface
 - **Circular dial design** - Inspired by the Time Timer, featuring a visual countdown sector that shrinks as time elapses
 - **Drag to set time** - Click and drag around the dial to set your desired timer duration (up to 60 minutes)
-- **Quick presets** - One-click buttons for common durations: 5m, 15m, 25m, 45m, and 60m
+- **Quick presets** - One-click buttons for common durations: 5m, 10m, 25m, and 50m
 - **Center knob reset** - Click the center knob to reset the timer to 00:00
 - **Minute markers** - Clear visual indicators every 5 minutes for easy time selection
 
@@ -25,7 +43,7 @@ A minimal Pomodoro-style timer desktop app inspired by the physical Time Timer d
 
 ## How to Use
 
-1. **Set the timer**: Click and drag around the dial, or use the quick preset buttons (5m, 15m, 25m, 45m, 60m)
+1. **Set the timer**: Click and drag around the dial, or use the quick preset buttons (5m, 10m, 25m, 50m)
 2. **Start**: The timer automatically starts when you set a duration greater than zero
 3. **Pause/Resume**: Click the dial while running to pause; click again to resume
 4. **Reset**: Click the center knob to reset to 00:00

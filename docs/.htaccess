@@ -1,0 +1,71 @@
+# Apache Configuration for realpomo Website
+# Security headers and optimizations
+
+# Enable HTTPS redirect (uncomment if you have SSL)
+# RewriteEngine On
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Security Headers
+<IfModule mod_headers.c>
+  # Content Security Policy
+  Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.github.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+  
+  # Prevent MIME type sniffing
+  Header set X-Content-Type-Options "nosniff"
+  
+  # Prevent clickjacking
+  Header set X-Frame-Options "DENY"
+  
+  # Control referrer information
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  
+  # Permissions Policy
+  Header set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+  
+  # Remove server information
+  Header unset Server
+  Header unset X-Powered-By
+</IfModule>
+
+# Cache Control
+<IfModule mod_expires.c>
+  ExpiresActive On
+  
+  # Images
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/gif "access plus 1 year"
+  ExpiresByType image/webp "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  
+  # CSS and JavaScript
+  ExpiresByType text/css "access plus 1 month"
+  ExpiresByType application/javascript "access plus 1 month"
+  ExpiresByType text/javascript "access plus 1 month"
+  
+  # HTML
+  ExpiresByType text/html "access plus 0 seconds"
+  
+  # Fonts
+  ExpiresByType font/woff "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType application/font-woff "access plus 1 year"
+  ExpiresByType application/font-woff2 "access plus 1 year"
+</IfModule>
+
+# Compression
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+</IfModule>
+
+# Prevent access to sensitive files
+<FilesMatch "^\.">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+# Custom error pages (optional)
+# ErrorDocument 404 /404.html
+# ErrorDocument 500 /500.html
+

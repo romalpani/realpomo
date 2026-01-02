@@ -169,6 +169,8 @@ body {
   transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
   outline: none;
   position: relative;
+  pointer-events: auto !important;
+  -webkit-app-region: no-drag;
 }
 
 .color-picker-option:hover {

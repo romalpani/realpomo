@@ -1,3 +1,7 @@
+// Static import - Vite will handle this correctly in both dev and production
+// In production, this becomes a data URL or a proper asset URL
+import tickSoundUrl from '../assets/clock_tick_extracted.wav?url'
+
 let audioCtx: AudioContext | null = null
 let tickBuffer: AudioBuffer | null = null
 let tickBufferLoading: Promise<AudioBuffer> | null = null
@@ -17,15 +21,31 @@ async function loadTickBuffer(): Promise<AudioBuffer> {
 
   tickBufferLoading = (async () => {
     try {
-      // Import the WAV file - Vite will handle the asset path
-      const tickUrl = new URL('../assets/clock_tick_extracted.wav', import.meta.url).href
-      const response = await fetch(tickUrl)
-      const arrayBuffer = await response.arrayBuffer()
+      let arrayBuffer: ArrayBuffer
+      
+      // Handle data URLs directly (production build)
+      if (tickSoundUrl.startsWith('data:')) {
+        const base64Data = tickSoundUrl.split(',')[1]
+        const binaryString = atob(base64Data)
+        const bytes = new Uint8Array(binaryString.length)
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i)
+        }
+        arrayBuffer = bytes.buffer
+      } else {
+        // Handle regular URLs (dev mode)
+        const response = await fetch(tickSoundUrl)
+        if (!response.ok) {
+          throw new Error(`Failed to fetch tick sound: ${response.status} ${response.statusText}`)
+        }
+        arrayBuffer = await response.arrayBuffer()
+      }
+      
       const buffer = await ctx().decodeAudioData(arrayBuffer)
       tickBuffer = buffer
       return buffer
     } catch (error) {
-      console.error('Failed to load tick sound:', error)
+      console.error('Failed to load tick sound:', error, { tickSoundUrl: tickSoundUrl.substring(0, 50) + '...' })
       throw error
     } finally {
       tickBufferLoading = null
@@ -95,8 +115,9 @@ export function playSetTick(): void {
         // Buffer loaded, play it now
         playTickSound()
       })
-      .catch(() => {
-        // Silently fail if loading fails
+      .catch((error) => {
+        // Log error but don't crash - sound is optional
+        console.warn('Tick sound failed to load, continuing without sound:', error)
       })
     return
   }

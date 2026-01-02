@@ -45,12 +45,58 @@ function createWindow(): BrowserWindow {
     }
   })
 
-  win.once('ready-to-show', () => win.show())
+  // Fallback: show window after a timeout if ready-to-show doesn't fire
+  const showTimeout = setTimeout(() => {
+    if (!win.isDestroyed() && !win.isVisible()) {
+      log.warn('Window not shown after timeout, forcing show')
+      win.show()
+    }
+  }, 3000)
+
+  // Show window when ready
+  win.once('ready-to-show', () => {
+    clearTimeout(showTimeout)
+    log.info('Window ready-to-show, showing window')
+    if (!win.isDestroyed()) {
+      win.show()
+      log.info('Window shown')
+    }
+  })
+
+  // Log when window is actually shown
+  win.on('show', () => {
+    log.info('Window show event fired')
+  })
+
+  // Handle page load errors
+  win.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL) => {
+    log.error('Failed to load page', { errorCode, errorDescription, validatedURL })
+    if (!win.isDestroyed()) {
+      win.show() // Show window even on error so user can see what happened
+    }
+  })
+
+  // Handle renderer process crashes
+  win.webContents.on('render-process-gone', (_event, details) => {
+    log.error('Renderer process gone', details)
+  })
 
   if (process.env.ELECTRON_RENDERER_URL) {
-    void win.loadURL(process.env.ELECTRON_RENDERER_URL)
+    void win.loadURL(process.env.ELECTRON_RENDERER_URL).catch((err) => {
+      log.error('Failed to load URL', err)
+      if (!win.isDestroyed()) {
+        win.show()
+      }
+    })
   } else {
-    void win.loadFile(join(__dirname, '../renderer/index.html'))
+    const htmlPath = join(__dirname, '../renderer/index.html')
+    log.info('Loading HTML file', htmlPath)
+    void win.loadFile(htmlPath).catch((err) => {
+      log.error('Failed to load HTML file', { err, htmlPath })
+      if (!win.isDestroyed()) {
+        win.show()
+      }
+    })
   }
 
   return win
@@ -69,6 +115,8 @@ if (!gotLock) {
 }
 
 app.whenReady().then(() => {
+  log.info('App ready, creating window...')
+  
   // Helps Windows notifications and taskbar grouping.
   if (process.platform === 'win32') app.setAppUserModelId('com.realpomo.app')
 
@@ -76,6 +124,15 @@ app.whenReady().then(() => {
   void nativeTheme
 
   const mainWindow = createWindow()
+  log.info('Window created', { id: mainWindow.id })
+
+  // Store reference for IPC handler
+  let mainWindowRef: BrowserWindow | null = mainWindow
+  
+  mainWindow.on('closed', () => {
+    log.info('Main window closed')
+    mainWindowRef = null
+  })
 
   ipcMain.on('timer:done', () => {
     if (Notification.isSupported()) {
@@ -87,11 +144,17 @@ app.whenReady().then(() => {
       }).show()
     }
 
-    mainWindow.flashFrame(true)
+    if (mainWindowRef && !mainWindowRef.isDestroyed()) {
+      mainWindowRef.flashFrame(true)
+    }
   })
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    log.info('App activated')
+    if (BrowserWindow.getAllWindows().length === 0) {
+      log.info('No windows, creating new one')
+      mainWindowRef = createWindow()
+    }
   })
 
   app.on('render-process-gone', (_event, details) => {

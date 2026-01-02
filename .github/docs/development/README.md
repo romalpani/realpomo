@@ -2,6 +2,8 @@
 
 This directory contains development and planning documentation for RealPomo.
 
+> **Note**: Files in `.github/` are not served by GitHub Pages, keeping these docs private/internal.
+
 ## Contents
 
 ### Release & Deployment
@@ -17,7 +19,6 @@ This directory contains development and planning documentation for RealPomo.
 
 ## Quick Links
 
-- **Main README**: [../../README.md](../../README.md)
-- **Website**: [../index.html](../index.html)
+- **Main README**: [../../../README.md](../../../README.md)
+- **Website**: [../../../docs/index.html](../../../docs/index.html)
 - **Release Pipeline**: [./release-pipeline/README.md](./release-pipeline/README.md)
-

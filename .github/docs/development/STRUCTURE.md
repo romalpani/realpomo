@@ -14,16 +14,18 @@ realpomo/
 │   └── *.md                 # Icon-related documentation
 ├── scripts/                  # Build and release scripts
 │   └── release.js           # Automated release script
-├── docs/                     # Documentation
-│   ├── index.html           # Website (public)
+├── docs/                     # Documentation (public, served by GitHub Pages)
+│   ├── index.html           # Website
 │   ├── *.css, *.js          # Website assets
-│   ├── *.png                # Website screenshots
-│   ├── SECURITY.md          # Security policy
-│   └── development/         # Development documentation
-│       ├── README.md        # This directory overview
-│       ├── release-pipeline/ # Release pipeline docs
-│       ├── CODE_REVIEW.md   # Code review notes
-│       └── *.md             # Other development docs
+│   └── *.png                # Website screenshots
+├── .github/                  # GitHub configuration
+│   ├── workflows/           # CI/CD workflows
+│   └── docs/                # Private development documentation
+│       └── development/     # Development docs (not public)
+│           ├── README.md    # This directory overview
+│           ├── release-pipeline/ # Release pipeline docs
+│           ├── CODE_REVIEW.md   # Code review notes
+│           └── *.md         # Other development docs
 ├── .github/                  # GitHub configuration
 │   ├── workflows/           # CI/CD workflows
 │   └── docs/                # GitHub-specific docs (if any)
@@ -32,12 +34,11 @@ realpomo/
 
 ## Key Directories
 
-### `/docs` - Public Documentation
+### `/docs` - Public Documentation (GitHub Pages)
 - **Website files**: `index.html`, `styles.css`, `app.js` - Public-facing website
 - **Screenshots**: `app-*.png` - Application screenshots for website
-- **SECURITY.md**: Security policy (GitHub standard)
 
-### `/docs/development` - Development Documentation
+### `/.github/docs/development` - Private Development Documentation
 - **release-pipeline/**: Complete guide for release setup and usage
 - **CODE_REVIEW.md**: Code review and refactoring notes
 - **NEXT_STEPS.md**: Development checklist
@@ -54,7 +55,10 @@ realpomo/
 
 ## File Organization Principles
 
-1. **Public vs Internal**: Public docs in root/docs, internal in docs/development
+1. **Public vs Internal**: 
+   - Public: `/docs` (website, served by GitHub Pages)
+   - Internal: `/.github/docs/development` (private, not served)
+   - Root: Essential files only (README, SECURITY.md, LICENSE)
 2. **Clean Root**: Only essential files (README, config files)
 3. **Logical Grouping**: Related files grouped by purpose
 4. **Discoverable**: Clear naming and README files
@@ -62,7 +66,7 @@ realpomo/
 ## Contributing
 
 When adding documentation:
-- **Public docs**: Add to `/docs` (website) or root (README, LICENSE)
-- **Development docs**: Add to `/docs/development`
+- **Public docs**: Add to `/docs` (website) or root (README, SECURITY.md, LICENSE)
+- **Development docs**: Add to `/.github/docs/development` (private)
 - **Build docs**: Add to `/build` (if build-related)
 

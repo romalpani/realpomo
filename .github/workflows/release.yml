@@ -38,6 +38,11 @@ jobs:
         run: npm run build:app
 
       - name: Build distributable
+        env:
+          # Disable electron-builder auto-publish (we handle releases in a separate job)
+          PUBLISH_FOR_PULL_REQUEST: false
+          # Provide GH_TOKEN if electron-builder needs it (it will use GITHUB_TOKEN automatically)
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Verify icon file exists
           if [ ! -f "build/icon.png" ]; then

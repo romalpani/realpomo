@@ -44,6 +44,7 @@
     "appId": "com.realpomo.app",
     "productName": "RealPomo",
     "icon": "build/icon.png",
+    "publish": null,
     "directories": {
       "output": "release"
     },

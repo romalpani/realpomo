@@ -1,7 +1,7 @@
 {
   "name": "realpomo",
   "private": true,
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Minimal Pomodoro timer desktop app (Electron + Vite)",
   "author": "",
   "main": "dist/main/index.js",
@@ -54,7 +54,10 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["arm64", "x64"]
+          "arch": [
+            "arm64",
+            "x64"
+          ]
         }
       ],
       "category": "public.app-category.productivity"
@@ -63,7 +66,10 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64", "ia32"]
+          "arch": [
+            "x64",
+            "ia32"
+          ]
         }
       ]
     },

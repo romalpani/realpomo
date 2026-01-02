@@ -32,6 +32,17 @@ jobs:
       - name: Run unit tests
         run: npm run test:unit
 
+      - name: Install system dependencies for Electron
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnss3 libatk-bridge2.0-0 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libasound2 libxss1
+
+      - name: Start virtual display
+        run: |
+          sudo apt-get install -y xvfb
+          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+          echo "DISPLAY=:99" >> $GITHUB_ENV
+
       - name: Run E2E tests
         run: npm run test:e2e
 

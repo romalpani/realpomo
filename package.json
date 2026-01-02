@@ -73,11 +73,7 @@
         }
       ]
     },
-    "publish": {
-      "provider": "github",
-      "owner": "romalpani",
-      "repo": "realpomo"
-    }
+    "publish": null
   },
   "dependencies": {
     "lucide": "^0.562.0"

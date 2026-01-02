@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build:app": "electron-vite build",
-    "build": "electron-vite build && electron-builder",
+    "build": "electron-vite build && electron-builder --publish never",
     "preview": "electron-vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint . --ext .ts",
@@ -73,7 +73,7 @@
         }
       ]
     },
-    "publish": null
+    "publish": "never"
   },
   "dependencies": {
     "lucide": "^0.562.0"

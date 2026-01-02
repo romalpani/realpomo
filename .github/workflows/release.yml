@@ -38,15 +38,25 @@ jobs:
         run: npm run build:app
 
       - name: Build distributable
-        env:
-          # macOS code signing (optional - set these secrets later if you want code signing)
-          # For now, builds will work without code signing (users will see a warning)
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-        run: npm run build
+        run: |
+          # Verify icon file exists
+          if [ ! -f "build/icon.png" ]; then
+            echo "Error: build/icon.png not found!"
+            exit 1
+          fi
+          
+          # Only set code signing env vars if secrets are provided (non-empty)
+          # This prevents electron-builder from misinterpreting empty strings as file paths
+          if [ -n "${{ secrets.CSC_LINK }}" ]; then
+            export CSC_LINK="${{ secrets.CSC_LINK }}"
+            export CSC_KEY_PASSWORD="${{ secrets.CSC_KEY_PASSWORD }}"
+          fi
+          if [ -n "${{ secrets.APPLE_ID }}" ]; then
+            export APPLE_ID="${{ secrets.APPLE_ID }}"
+            export APPLE_ID_PASS="${{ secrets.APPLE_ID_PASS }}"
+            export APPLE_TEAM_ID="${{ secrets.APPLE_TEAM_ID }}"
+          fi
+          npm run build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

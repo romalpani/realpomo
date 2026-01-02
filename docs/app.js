@@ -7,6 +7,38 @@
   'use strict';
 
   // ============================================================================
+  // Production Console Wrapper
+  // ============================================================================
+  
+  const isProduction = (function() {
+    try {
+      return window.location.hostname !== 'localhost' && 
+             window.location.hostname !== '127.0.0.1' &&
+             !window.location.hostname.startsWith('192.168.');
+    } catch (e) {
+      return true; // Assume production if check fails
+    }
+  })();
+
+  function safeConsole(method) {
+    if (typeof console === 'undefined' || !console[method]) {
+      return function() {}; // No-op if console not available
+    }
+    if (isProduction) {
+      return function() {}; // No-op in production
+    }
+    return function() {
+      console[method].apply(console, arguments);
+    };
+  }
+
+  const logger = {
+    warn: safeConsole('warn'),
+    error: safeConsole('error'),
+    log: safeConsole('log')
+  };
+
+  // ============================================================================
   // Configuration
   // ============================================================================
 
@@ -142,7 +174,7 @@
    */
   function cacheRelease(data) {
     if (!isValidReleaseData(data)) {
-      console.warn('Invalid release data, not caching');
+      logger.warn('Invalid release data, not caching');
       return;
     }
     
@@ -154,7 +186,7 @@
       localStorage.setItem(CONFIG.CACHE_KEY, JSON.stringify(cacheData));
     } catch (e) {
       // Quota exceeded or other storage error
-      console.warn('Failed to cache release data:', e);
+      logger.warn('Failed to cache release data:', e);
       // Try to clear old cache and retry once
       try {
         localStorage.removeItem(CONFIG.CACHE_KEY);
@@ -195,7 +227,7 @@
     
     // Validate API URL
     if (!isValidUrl(apiUrl, 'github.com')) {
-      console.error('Invalid API URL');
+      logger.error('Invalid API URL');
       return cached && cached.data ? cached.data : null;
     }
 
@@ -234,7 +266,7 @@
       // Validate all asset URLs
       for (const asset of data.assets) {
         if (!isValidAsset(asset)) {
-          console.warn('Invalid asset found, skipping:', asset);
+          logger.warn('Invalid asset found, skipping:', asset);
         }
       }
       
@@ -251,7 +283,7 @@
       
       // Log non-404 errors
       if (error.message && !error.message.includes('404')) {
-        console.error('Error fetching release:', error);
+        logger.error('Error fetching release:', error);
       }
       
       // Return cached data even if expired, as fallback
@@ -273,22 +305,23 @@
    */
   function updateDownloadLinks(release) {
     const downloadBtn = document.getElementById('download-btn');
-    const versionEl = document.getElementById('version');
+    const downloadBtnSecondary = document.getElementById('download-btn-secondary');
     
     if (!downloadBtn) {
-      console.warn('Download button not found');
+      logger.warn('Download button not found');
       return;
     }
 
+    const fallbackUrl = `${CONFIG.GITHUB_BASE}/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}/releases/latest`;
+    const isValidFallback = isValidUrl(fallbackUrl, 'github.com');
+
     if (!release) {
-      // Error state - keep button functional but show error
-      if (versionEl) {
-        versionEl.textContent = '';
-        versionEl.setAttribute('aria-label', 'Version information unavailable');
-      }
-      const fallbackUrl = `${CONFIG.GITHUB_BASE}/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}/releases/latest`;
-      if (isValidUrl(fallbackUrl, 'github.com')) {
+      // Error state - keep buttons functional but link to releases page
+      if (isValidFallback) {
         downloadBtn.href = fallbackUrl;
+        if (downloadBtnSecondary) {
+          downloadBtnSecondary.href = fallbackUrl;
+        }
       }
       downloadBtn.classList.remove('loading');
       return;
@@ -296,43 +329,98 @@
 
     const platform = detectPlatform();
     
-    // Find appropriate asset for platform
-    let asset = null;
-    
     if (platform === 'mac') {
-      // Prefer DMG files
-      asset = release.assets.find(a => 
-        isValidAsset(a) && a.name.endsWith('.dmg')
+      // Mac: Show both Apple Silicon and Intel options
+      // Find arm64 (Apple Silicon) DMG
+      const arm64Asset = release.assets.find(a => 
+        isValidAsset(a) && 
+        a.name.endsWith('.dmg') && 
+        (a.name.toLowerCase().includes('arm64') || a.name.toLowerCase().includes('aarch64'))
       );
+      
+      // Find x64 (Intel) DMG - look for x64 or exclude arm64/aarch64
+      const x64Asset = release.assets.find(a => {
+        if (!isValidAsset(a) || !a.name.endsWith('.dmg')) return false;
+        const nameLower = a.name.toLowerCase();
+        // Explicitly check for x64/intel indicators
+        if (nameLower.includes('x64') || nameLower.includes('intel') || nameLower.includes('x86_64')) {
+          return true;
+        }
+        // If it's a dmg and doesn't contain arm64/aarch64, assume it's x64
+        // (this handles cases where naming might vary)
+        if (!nameLower.includes('arm64') && !nameLower.includes('aarch64')) {
+          // But make sure we're not picking up the arm64 one
+          return a !== arm64Asset;
+        }
+        return false;
+      });
+
+      // Primary button: Apple Silicon (arm64)
+      if (arm64Asset && isValidAsset(arm64Asset)) {
+        downloadBtn.href = arm64Asset.browser_download_url;
+        downloadBtn.download = sanitizeString(arm64Asset.name);
+        downloadBtn.textContent = 'Download for Apple silicon';
+        downloadBtn.setAttribute('aria-label', 'Download for Apple silicon');
+      } else if (isValidFallback) {
+        downloadBtn.href = fallbackUrl;
+        downloadBtn.textContent = 'Download for Apple silicon';
+      }
+
+      // Secondary button: Intel (x64) - show as link
+      if (downloadBtnSecondary) {
+        if (x64Asset && isValidAsset(x64Asset)) {
+          downloadBtnSecondary.href = x64Asset.browser_download_url;
+          downloadBtnSecondary.download = sanitizeString(x64Asset.name);
+          downloadBtnSecondary.classList.remove('hidden');
+          downloadBtnSecondary.setAttribute('aria-label', 'Download for Intel chip');
+        } else if (isValidFallback) {
+          // Show secondary link even if x64 asset not found (links to releases page)
+          downloadBtnSecondary.href = fallbackUrl;
+          downloadBtnSecondary.classList.remove('hidden');
+          downloadBtnSecondary.setAttribute('aria-label', 'Download for Intel chip');
+        } else {
+          downloadBtnSecondary.classList.add('hidden');
+        }
+      }
+
+      downloadBtn.classList.remove('loading');
+      
     } else if (platform === 'win') {
-      // Look for Windows installer
-      asset = release.assets.find(a => 
+      // Windows: Single download button
+      const winAsset = release.assets.find(a => 
         isValidAsset(a) && (
           a.name.endsWith('.exe') || 
           a.name.toLowerCase().includes('installer') ||
           a.name.toLowerCase().includes('setup')
         )
       );
-    }
 
-    if (asset && isValidAsset(asset)) {
-      downloadBtn.href = asset.browser_download_url;
-      downloadBtn.download = sanitizeString(asset.name);
+      // Hide secondary button for Windows
+      if (downloadBtnSecondary) {
+        downloadBtnSecondary.classList.add('hidden');
+      }
+
+      if (winAsset && isValidAsset(winAsset)) {
+        downloadBtn.href = winAsset.browser_download_url;
+        downloadBtn.download = sanitizeString(winAsset.name);
+        downloadBtn.textContent = 'Download';
+        downloadBtn.setAttribute('aria-label', 'Download for Windows');
+      } else if (isValidFallback) {
+        downloadBtn.href = fallbackUrl;
+        downloadBtn.textContent = 'Download';
+      }
+
       downloadBtn.classList.remove('loading');
     } else {
-      // Fallback: link to releases page
-      const fallbackUrl = `${CONFIG.GITHUB_BASE}/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}/releases/latest`;
-      if (isValidUrl(fallbackUrl, 'github.com')) {
+      // Unknown platform - default to fallback
+      if (isValidFallback) {
         downloadBtn.href = fallbackUrl;
+        downloadBtn.textContent = 'Download';
+      }
+      if (downloadBtnSecondary) {
+        downloadBtnSecondary.classList.add('hidden');
       }
       downloadBtn.classList.remove('loading');
-    }
-
-    // Update version display with sanitization
-    if (versionEl && release.tag_name) {
-      const versionText = sanitizeString(release.tag_name);
-      versionEl.textContent = ' ' + versionText;
-      versionEl.setAttribute('aria-label', 'Version ' + versionText);
     }
   }
 
@@ -355,7 +443,7 @@
       const release = await fetchLatestRelease();
       updateDownloadLinks(release);
     } catch (error) {
-      console.error('Failed to initialize download manager:', error);
+      logger.error('Failed to initialize download manager:', error);
       // Ensure loading state is removed even on error
       if (downloadBtn) {
         downloadBtn.classList.remove('loading');

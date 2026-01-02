@@ -101,6 +101,14 @@ a:focus-visible {
   }
 }
 
+/* Download Container */
+.download-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
 /* Buttons */
 .btn {
   display: inline-flex;
@@ -138,6 +146,37 @@ a:focus-visible {
   pointer-events: none;
 }
 
+/* Secondary Download Link */
+.btn-secondary {
+  display: inline-block;
+  color: var(--muted);
+  font-size: 14px;
+  text-decoration: underline;
+  text-decoration-color: rgba(17, 17, 17, 0.3);
+  text-underline-offset: 3px;
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+
+.btn-secondary:hover {
+  color: var(--ink);
+  text-decoration-color: var(--ink);
+  opacity: 1;
+}
+
+.btn-secondary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.btn-secondary.hidden {
+  display: none;
+}
+
+.oss-button-wrapper {
+  margin-top: 24px;
+}
+
 /* Hero Section */
 .hero {
   margin-top: 60px;
@@ -162,7 +201,7 @@ h1 {
 }
 
 .sub {
-  margin: 0 0 32px;
+  margin: 0 0 24px;
   font-size: 18px;
   line-height: 1.6;
   color: var(--muted);
@@ -253,7 +292,7 @@ section {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 48px;
-  align-items: center;
+  align-items: start;
   margin-top: 80px;
 }
 
@@ -273,15 +312,22 @@ section {
 }
 
 .feature-content h2 {
-  margin: 0 0 16px;
-  font-size: 36px;
+  margin: 0 0 8px;
+  font-size: 28px;
   letter-spacing: -0.02em;
   line-height: 1.2;
   font-weight: 700;
 }
 
+.section-subtitle {
+  margin: 0 0 24px;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
 .feature-content h3 {
-  margin: 24px 0 8px;
+  margin: 16px 0 4px;
   font-size: 20px;
   letter-spacing: -0.01em;
   font-weight: 600;
@@ -312,33 +358,7 @@ section {
   width: 100%;
   height: auto;
   border-radius: 12px;
-  filter: brightness(1.05);
-}
-
-/* Showcase */
-.showcase {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  margin-top: 40px;
-}
-
-@media (max-width: 920px) {
-  .showcase {
-    grid-template-columns: 1fr;
-  }
-}
-
-.shot {
-  overflow: hidden;
-  border-radius: 12px;
-}
-
-.shot img {
-  display: block;
-  width: 100%;
-  height: auto;
-  filter: brightness(1.05);
+  filter: brightness(1.02);
 }
 
 /* Open Source Section */
@@ -361,38 +381,6 @@ section {
 
 .oss-content p:last-child {
   margin-bottom: 0;
-}
-
-.oss-list {
-  list-style: none;
-  padding: 0;
-  margin: 24px 0 0;
-  display: grid;
-  gap: 12px;
-}
-
-.oss-list li {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  color: var(--muted);
-  font-size: 15px;
-  line-height: 1.6;
-}
-
-.check {
-  width: 20px;
-  height: 20px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 99, 71, 0.3);
-  background: rgba(255, 99, 71, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--accent);
-  flex: 0 0 auto;
-  margin-top: 2px;
-  font-size: 12px;
 }
 
 /* Footer */

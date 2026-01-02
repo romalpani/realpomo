@@ -7,6 +7,38 @@
   'use strict';
 
   // ============================================================================
+  // Production Console Wrapper
+  // ============================================================================
+  
+  const isProduction = (function() {
+    try {
+      return window.location.hostname !== 'localhost' && 
+             window.location.hostname !== '127.0.0.1' &&
+             !window.location.hostname.startsWith('192.168.');
+    } catch (e) {
+      return true; // Assume production if check fails
+    }
+  })();
+
+  function safeConsole(method) {
+    if (typeof console === 'undefined' || !console[method]) {
+      return function() {}; // No-op if console not available
+    }
+    if (isProduction) {
+      return function() {}; // No-op in production
+    }
+    return function() {
+      console[method].apply(console, arguments);
+    };
+  }
+
+  const logger = {
+    warn: safeConsole('warn'),
+    error: safeConsole('error'),
+    log: safeConsole('log')
+  };
+
+  // ============================================================================
   // Utility Functions
   // ============================================================================
 
@@ -105,7 +137,16 @@
       if (!running) return;
       running = false;
       lastTs = 0;
-      if (rafId) scheduler.cancelAnimationFrame(rafId);
+      if (rafId) {
+        scheduler.cancelAnimationFrame(rafId);
+        rafId = 0;
+      }
+    }
+    
+    function cleanup() {
+      pause();
+      remainingMs = 0;
+      lastEmittedSeconds = null;
     }
 
     function reset(seconds) {
@@ -135,7 +176,8 @@
       reset,
       isRunning,
       setRemainingSeconds,
-      getRemainingSeconds
+      getRemainingSeconds,
+      cleanup: cleanup
     };
   }
 
@@ -397,12 +439,12 @@
           })
           .catch(function(error) {
             tickBufferLoading = null;
-            console.warn('Failed to load tick sound, using synthesized sound:', error);
+            logger.warn('Failed to load tick sound, using synthesized sound:', error);
             return null;
           });
       } catch (error) {
         tickBufferLoading = null;
-        console.warn('Failed to load tick sound, using synthesized sound:', error);
+        logger.warn('Failed to load tick sound, using synthesized sound:', error);
         return Promise.resolve(null);
       }
     })();
@@ -1056,11 +1098,12 @@
           const seconds = getSeconds();
           if (seconds > 0) start();
           else pause();
+          rafId = null;
         } else {
-          requestAnimationFrame(checkSettle);
+          rafId = requestAnimationFrame(checkSettle);
         }
       };
-      requestAnimationFrame(checkSettle);
+      rafId = requestAnimationFrame(checkSettle);
     }
 
     function onMouseMove(ev) {
@@ -1094,8 +1137,35 @@
 
     update(getSeconds());
 
+    // Cleanup function to prevent memory leaks
+    function cleanup() {
+      // Remove event listeners
+      interactive.removeEventListener('pointerdown', onPointerDown);
+      interactive.removeEventListener('pointermove', onPointerMove);
+      interactive.removeEventListener('pointerup', onPointerUp);
+      interactive.removeEventListener('pointercancel', onPointerUp);
+      interactive.removeEventListener('mousemove', onMouseMove);
+      interactive.removeEventListener('mouseleave', onMouseLeave);
+      
+      // Cancel any pending animation frames
+      if (rafId !== null && rafId !== 0) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      
+      // End any active drag
+      if (dragging) {
+        endDrag(clockworkState);
+        dragging = false;
+      }
+      
+      // Pause timer
+      pause();
+    }
+
     return {
       update,
+      cleanup: cleanup,
       setInteractive: function(next) {
         interactive.style.pointerEvents = next ? 'auto' : 'none';
         interactive.style.opacity = next ? '1' : '0.98';
@@ -1108,11 +1178,20 @@
   // Public API
   // ============================================================================
 
+  // Store cleanup functions for multiple timer instances
+  const timerInstances = new WeakMap();
+
   window.initTimer = function(container, options) {
     // Validate container
     if (!container || !(container instanceof HTMLElement)) {
-      console.error('initTimer: container must be a valid HTMLElement');
-      return;
+      logger.error('initTimer: container must be a valid HTMLElement');
+      return null;
+    }
+    
+    // Cleanup existing timer if present
+    const existingCleanup = timerInstances.get(container);
+    if (existingCleanup && typeof existingCleanup === 'function') {
+      existingCleanup();
     }
     
     // Validate and sanitize options
@@ -1149,7 +1228,7 @@
               requireInteraction: false
             });
           } catch (e) {
-            console.warn('Failed to show notification:', e);
+            logger.warn('Failed to show notification:', e);
           }
         } else if ('Notification' in window && Notification.permission !== 'denied') {
           Notification.requestPermission().then(function(permission) {
@@ -1163,11 +1242,11 @@
                   requireInteraction: false
                 });
               } catch (e) {
-                console.warn('Failed to show notification:', e);
+                logger.warn('Failed to show notification:', e);
               }
             }
           }).catch(function(e) {
-            console.warn('Failed to request notification permission:', e);
+            logger.warn('Failed to request notification permission:', e);
           });
         }
       }
@@ -1187,6 +1266,20 @@
       enableSounds: enableSounds
     });
 
+    // Store cleanup function
+    const cleanup = function() {
+      if (timer && typeof timer.pause === 'function') {
+        timer.pause();
+      }
+      if (timer && typeof timer.cleanup === 'function') {
+        timer.cleanup();
+      }
+      if (clock && typeof clock.cleanup === 'function') {
+        clock.cleanup();
+      }
+    };
+    timerInstances.set(container, cleanup);
+
     // Request notification permission on first interaction
     if ('Notification' in window && Notification.permission === 'default') {
       // Request permission on first user interaction
@@ -1197,6 +1290,18 @@
       };
       document.addEventListener('click', requestPermission, { once: true });
       document.addEventListener('touchstart', requestPermission, { once: true });
+    }
+    
+    // Return cleanup function for external use
+    return cleanup;
+  };
+  
+  // Expose cleanup function globally
+  window.cleanupTimer = function(container) {
+    const cleanup = timerInstances.get(container);
+    if (cleanup && typeof cleanup === 'function') {
+      cleanup();
+      timerInstances.delete(container);
     }
   };
 

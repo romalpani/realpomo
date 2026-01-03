@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  
+  <!-- Primary Meta Tags -->
+  <title>The story of realpomo</title>
+  <meta name="title" content="The story of realpomo" />
+  <meta name="description" content="I designed, built, and shipped this small Pomodoro timer called realpomo — with the help of AI. This is the story of how it came together." />
+  <meta name="theme-color" content="#ff6347" />
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://romalpani.github.io/realpomo/story.html" />
+  <meta property="og:title" content="The story of realpomo" />
+  <meta property="og:description" content="I designed, built, and shipped this small Pomodoro timer called realpomo — with the help of AI. This is the story of how it came together." />
+  <meta property="og:image" content="https://romalpani.github.io/realpomo/app-1.png" />
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://romalpani.github.io/realpomo/story.html" />
+  <meta property="twitter:title" content="The story of realpomo" />
+  <meta property="twitter:description" content="I designed, built, and shipped this small Pomodoro timer called realpomo — with the help of AI. This is the story of how it came together." />
+  <meta property="twitter:image" content="https://romalpani.github.io/realpomo/app-1.png" />
+  
+  <!-- Security -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.github.com; base-uri 'self'; form-action 'self';" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+  
+  <!-- Icons -->
+  <link rel="icon" href="icon.png" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  
+  <!-- Preload critical resources -->
+  <link rel="preload" href="styles.css" as="style" />
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <div class="wrap">
+    <header class="nav" role="banner">
+      <div class="brand">
+        <a href="index.html">
+          <img src="icon.png" alt="realpomo logo" width="28" height="28" />
+          <span>realpomo</span>
+        </a>
+      </div>
+
+      <nav class="navlinks" aria-label="Primary navigation">
+        <a href="index.html#features">Features</a>
+        <a href="index.html#open-source">Open source</a>
+        <a href="story.html">Story</a>
+      </nav>
+    </header>
+
+    <main role="main">
+      <article class="article">
+        <header class="article-header">
+          <h1>The story of realpomo</h1>
+          <p class="article-meta">I designed, built, and shipped this small Pomodoro timer called realpomo — with the help of AI.</p>
+        </header>
+
+        <div class="article-content">
+          <p class="lead">It started with something ordinary: watching my toddler use a physical timer to set boundaries around playtime and transitions. Twist the dial. Hear the click. Time feels real. I wondered whether a digital Pomodoro timer could feel that grounded — and whether I could actually ship one, not just design it.</p>
+
+          <p>I'm a product designer by training. This was my first time owning every step of a desktop app end‑to‑end. What surprised me wasn't how fast I could build — it was how much there was to learn to actually ship.</p>
+
+          <h2>Finding the shape — without drawing a single design</h2>
+
+          <p>I never opened a design file.</p>
+
+          <p>Every interaction started as an experiment. I began in VS Code with GitHub Copilot, feeding it pictures of the physical timer I have and iterating directly in code. The UI took shape through behavior and feel — guided by a mental model, the object on my desk, and a lot of prompting and iteration.</p>
+
+          <p>Then I tried Figma Make - because why not. With the same images and a simple prompt, it one‑shotted a clock UI that looked and behaved remarkably right — UI, interactions, look-and-feel. I was quite blown away, actually.</p>
+
+          <p>That was the pivot. I stopped looking for one perfect tool and started matching tools to phases. Figma Make helped me find the shape. VS Code and Cursor helped me turn it into a real system.</p>
+
+          <p>This felt like a meaningful shift in how design can happen: less about drawing artifacts up front, more about imagining clearly, expressing intent, and shaping the thing directly where it lives.</p>
+
+          <h2>Rapid iteration and fine‑tuning</h2>
+
+          <p>Designing the dial felt familiar. Implementing it didn't.</p>
+
+          <p>"Snap to minutes" sounded simple until it wasn't. Dragging the hand couldn't constantly update state. Snapping at the minute marker had to happen on release. Overshoot needed to be allowed. Settling had to feel intentional.</p>
+
+          <p>The physical dial was the anchor, but this was still a digital product. Presets and readouts needed to be fast and precise, without losing the calm, tactile quality of the interaction.</p>
+
+          <p>Nothing was broken — it just didn't feel right yet.</p>
+
+          <p>AI made that fine‑tuning approachable. I'd observe behavior, ask why something felt off, make a small change, test it, and repeat — until the interaction matched the taste I had in mind.</p>
+
+          <h2>The sound that disappeared</h2>
+
+          <p>Sound was meant to be subtle. It ended up teaching me a lot.</p>
+
+          <p>I explored free sound libraries, trimmed tiny fragments, and tuned them until they paired naturally with the dial — quiet, mechanical, easy to live with (thanks to ChatGPT)</p>
+
+          <p>Then the surprise: the ticking sound worked locally but vanished in the packaged macOS app. The completion chime survived. The tick didn't.</p>
+
+          <p>One sound was synthesized. The other relied on bundled assets, paths, and runtime assumptions.</p>
+
+          <p>It wasn't a sound problem. It was a shipping problem.</p>
+
+          <h2>The gap between "working" and "shipped"</h2>
+
+          <p>The app worked locally long before it was usable by anyone else.</p>
+
+          <p>MacOS security warnings sent me into code signing rabbit hole. CI builds succeeded but produced unusable artifacts. Secrets existed but were empty - result of not reviewing generated code. The website needed logic, not just copy. Even the app icon only became real once publishing forced the question.</p>
+
+          <p>None of this felt like failure. It felt like discovering a layer I hadn't been thinking about. Shipping turned out to be its own craft. Pipelines are systems. And there's a whole lot of effort in taking something that works locally to one that's shippable.</p>
+
+          <h2>Building with AI, from the inside</h2>
+
+          <p>As a product designer working on Visual Studio and GitHub Copilot, I also experienced this project through another lens: thinking about what it means to build next‑generation IDEs for professional developers while using AI as a first‑class collaborator.</p>
+
+          <p>I noticed how much context mattered, how progress indicators changed perceived speed, and how well today's tools understand entire repositories. Most real evaluation didn't happen in code — it happened by running the app and seeing how it behaved.</p>
+
+          <p>There's a lot here that carries back into my day job: designing AI interactions, surfacing progress clearly, managing context well, enabling powerful reviewing process, helping builders stay oriented while real work happens.</p>
+
+          <h2>What changed for me</h2>
+
+          <p>realpomo isn't a big app. That's the point.</p>
+
+          <p>AI let me experience the full end‑to‑end arc of building software myself, over a weekend. That built real empathy for the many disciplines that come together to ship a product — and gave me a Pomodoro timer I could genuinely use.</p>
+
+          <p>I set out to design a timer app for personal productivity. I ended up learning how real software gets made. That shift has been the most valuable part of this project.</p>
+
+          <p class="article-footer">Tools used in the making of this app - VS Code, GitHub Copilot (GPT5.2), Cursor (Composer), ChatGPT, MidJourney, Figma Make, GitHub.</p>
+        </div>
+      </article>
+
+      <footer role="contentinfo">
+        <div><em>Inspired by real toddler timer, vibed by Rohan Malpani</em></div>
+      </footer>
+    </main>
+  </div>
+</body>
+</html>
+

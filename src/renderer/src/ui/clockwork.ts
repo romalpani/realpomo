@@ -352,3 +352,20 @@ export function snapToDetent(angle: number): number {
   return idx * STEP_RAD
 }
 
+/**
+ * Snap angle to detent for countdown display
+ * Uses ceiling to always show the next higher minute marker until that minute completes
+ * Note: When angle is 0 (0 seconds), this correctly returns 0 (shows hand at 12 o'clock position)
+ */
+export function snapToDetentForCountdown(angle: number): number {
+  // Normalize angle to [0, 2π)
+  const normalizedAngle = normalizeAngle(angle)
+  // Calculate index using ceiling
+  let idx = Math.ceil(normalizedAngle / STEP_RAD)
+  // Handle wraparound: if idx equals STEPS (60), wrap to 0
+  if (idx === STEPS) {
+    idx = 0
+  }
+  return idx * STEP_RAD
+}
+

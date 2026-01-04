@@ -10,7 +10,8 @@ import {
   endDrag,
   angleToSeconds,
   secondsToAngle,
-  snapToDetent
+  snapToDetent,
+  snapToDetentForCountdown
 } from './clockwork'
 
 type ClockOptions = {
@@ -21,6 +22,7 @@ type ClockOptions = {
   start: () => void
   pause: () => void
   canEdit: () => boolean
+  isRunning: () => boolean
   onMinuteStep?: (minute: number) => void
 }
 
@@ -43,7 +45,7 @@ export type ClockColor = {
 }
 
 export function createPomodoroClock(options: ClockOptions) {
-  const { host, maxSeconds, getSeconds, setSeconds, start, pause, canEdit, onMinuteStep } = options
+  const { host, maxSeconds, getSeconds, setSeconds, start, pause, canEdit, isRunning, onMinuteStep } = options
 
   host.replaceChildren()
 
@@ -612,6 +614,15 @@ export function createPomodoroClock(options: ClockOptions) {
   const center = 50
   const sectorRadius = 45
 
+  /**
+   * Helper to determine which snapping function to use based on timer state
+   * During countdown (timer running with seconds > 0), use ceiling snap to show next minute marker
+   * Otherwise (timer paused/stopped or at 0), use nearest snap for setting time
+   */
+  function getSnapFunction(seconds: number): (angle: number) => number {
+    return isRunning() && seconds > 0 ? snapToDetentForCountdown : snapToDetent
+  }
+
   function updateSector(seconds: number): void {
     const t = clamp(seconds, 0, maxSeconds)
     const timeFraction = maxSeconds === 0 ? 0 : t / maxSeconds
@@ -621,8 +632,8 @@ export function createPomodoroClock(options: ClockOptions) {
     if (dragging || clockworkState.inSettleAnimation) {
       angle = clockworkState.angleDisplay
     } else {
-      // When not dragging, snap to nearest detent for realistic clock feel
-      angle = snapToDetent(angle)
+      // Snap angle based on timer state (countdown vs setting)
+      angle = getSnapFunction(t)(angle)
     }
     
     const endX = center + sectorRadius * Math.sin(angle)
@@ -655,8 +666,8 @@ export function createPomodoroClock(options: ClockOptions) {
     if (!dragging) {
       const angle = secondsToAngle(seconds, maxSeconds)
       clockworkState.angleRaw = angle
-      // Snap display angle to detent for realistic feel
-      clockworkState.angleDisplay = snapToDetent(angle)
+      // Snap display angle based on timer state (countdown vs setting)
+      clockworkState.angleDisplay = getSnapFunction(seconds)(angle)
       clockworkState.detentIndexCommitted = Math.floor(angle / ((2 * Math.PI) / 60) + 0.5)
       clockworkState.detentIndexNearest = Math.round(angle / ((2 * Math.PI) / 60))
     }

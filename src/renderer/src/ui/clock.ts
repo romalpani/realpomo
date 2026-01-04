@@ -616,11 +616,11 @@ export function createPomodoroClock(options: ClockOptions) {
 
   /**
    * Helper to determine which snapping function to use based on timer state
-   * During countdown (timer running with time > 0), use ceiling snap to show next minute marker
+   * During countdown (timer running with seconds > 0), use ceiling snap to show next minute marker
    * Otherwise (timer paused/stopped or at 0), use nearest snap for setting time
    */
-  function getSnapFunction(timeValue: number): (angle: number) => number {
-    return isRunning() && timeValue > 0 ? snapToDetentForCountdown : snapToDetent
+  function getSnapFunction(seconds: number): (angle: number) => number {
+    return isRunning() && seconds > 0 ? snapToDetentForCountdown : snapToDetent
   }
 
   function updateSector(seconds: number): void {

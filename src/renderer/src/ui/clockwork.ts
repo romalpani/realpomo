@@ -363,7 +363,7 @@ export function snapToDetentForCountdown(angle: number): number {
   // Calculate index using ceiling
   let idx = Math.ceil(normalizedAngle / STEP_RAD)
   // Handle wraparound: if idx equals STEPS (60), wrap to 0
-  if (idx >= STEPS) {
+  if (idx === STEPS) {
     idx = 0
   }
   return idx * STEP_RAD

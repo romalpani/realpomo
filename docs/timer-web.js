@@ -379,6 +379,23 @@
     return idx * STEP_RAD;
   }
 
+  /**
+   * Snap angle to detent for countdown display
+   * Uses ceiling to always show the next higher minute marker until that minute completes
+   * Note: When angle is 0 (0 seconds), this correctly returns 0 (shows hand at 12 o'clock position)
+   */
+  function snapToDetentForCountdown(angle) {
+    // Normalize angle to [0, 2π)
+    const normalizedAngle = normalizeAngle(angle);
+    // Calculate index using ceiling
+    let idx = Math.ceil(normalizedAngle / STEP_RAD);
+    // Handle wraparound: if idx equals STEPS (60), wrap to 0
+    if (idx === STEPS) {
+      idx = 0;
+    }
+    return idx * STEP_RAD;
+  }
+
   // ============================================================================
   // Sound Effects (Web Audio API)
   // ============================================================================
@@ -570,7 +587,7 @@
   };
 
   function createPomodoroClock(options) {
-    const { host, maxSeconds, getSeconds, setSeconds, start, pause, canEdit, onMinuteStep, enableSounds } = options;
+    const { host, maxSeconds, getSeconds, setSeconds, start, pause, canEdit, isRunning, onMinuteStep, enableSounds } = options;
 
     host.replaceChildren();
 
@@ -832,6 +849,15 @@
     const center = 50;
     const sectorRadius = 45;
 
+    /**
+     * Helper to determine which snapping function to use based on timer state
+     * During countdown (timer running with seconds > 0), use ceiling snap to show next minute marker
+     * Otherwise (timer paused/stopped or at 0), use nearest snap for setting time
+     */
+    function getSnapFunction(seconds) {
+      return isRunning() && seconds > 0 ? snapToDetentForCountdown : snapToDetent;
+    }
+
     function updateSector(seconds) {
       const t = clamp(seconds, 0, maxSeconds);
       const timeFraction = maxSeconds === 0 ? 0 : t / maxSeconds;
@@ -852,7 +878,8 @@
       if (dragging || clockworkState.inSettleAnimation) {
         angle = clockworkState.angleDisplay;
       } else {
-        angle = snapToDetent(angle);
+        // Snap angle based on timer state (countdown vs setting)
+        angle = getSnapFunction(t)(angle);
       }
       
       const endX = center + sectorRadius * Math.sin(angle);
@@ -883,7 +910,8 @@
       if (!dragging) {
         const angle = secondsToAngle(clampedSeconds, maxSeconds);
         clockworkState.angleRaw = angle;
-        clockworkState.angleDisplay = snapToDetent(angle);
+        // Snap display angle based on timer state (countdown vs setting)
+        clockworkState.angleDisplay = getSnapFunction(clampedSeconds)(angle);
         clockworkState.detentIndexCommitted = Math.floor(angle / ((2 * Math.PI) / 60) + 0.5);
         clockworkState.detentIndexNearest = Math.round(angle / ((2 * Math.PI) / 60));
       }
@@ -1260,6 +1288,7 @@
       start: function() { timer.start(); },
       pause: function() { timer.pause(); },
       canEdit: function() { return true; }, // Always allow editing (can drag even when running)
+      isRunning: function() { return timer.isRunning(); },
       onMinuteStep: function(minute) {
         // Optional callback
       },

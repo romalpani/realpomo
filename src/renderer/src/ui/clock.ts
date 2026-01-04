@@ -614,6 +614,15 @@ export function createPomodoroClock(options: ClockOptions) {
   const center = 50
   const sectorRadius = 45
 
+  /**
+   * Helper to determine which snapping function to use based on timer state
+   * During countdown, use ceiling snap to show next minute marker
+   * Otherwise, use nearest snap for setting time
+   */
+  function getSnapFunction(timeValue: number): (angle: number) => number {
+    return isRunning() && timeValue > 0 ? snapToDetentForCountdown : snapToDetent
+  }
+
   function updateSector(seconds: number): void {
     const t = clamp(seconds, 0, maxSeconds)
     const timeFraction = maxSeconds === 0 ? 0 : t / maxSeconds
@@ -623,13 +632,8 @@ export function createPomodoroClock(options: ClockOptions) {
     if (dragging || clockworkState.inSettleAnimation) {
       angle = clockworkState.angleDisplay
     } else {
-      // When timer is running (countdown), snap to next higher minute marker
-      // Otherwise (setting time), snap to nearest minute marker
-      if (isRunning() && t > 0) {
-        angle = snapToDetentForCountdown(angle)
-      } else {
-        angle = snapToDetent(angle)
-      }
+      // Snap angle based on timer state (countdown vs setting)
+      angle = getSnapFunction(t)(angle)
     }
     
     const endX = center + sectorRadius * Math.sin(angle)
@@ -662,13 +666,8 @@ export function createPomodoroClock(options: ClockOptions) {
     if (!dragging) {
       const angle = secondsToAngle(seconds, maxSeconds)
       clockworkState.angleRaw = angle
-      // When timer is running (countdown), snap to next higher minute marker
-      // Otherwise (setting time), snap to nearest minute marker
-      if (isRunning() && seconds > 0) {
-        clockworkState.angleDisplay = snapToDetentForCountdown(angle)
-      } else {
-        clockworkState.angleDisplay = snapToDetent(angle)
-      }
+      // Snap display angle based on timer state (countdown vs setting)
+      clockworkState.angleDisplay = getSnapFunction(seconds)(angle)
       clockworkState.detentIndexCommitted = Math.floor(angle / ((2 * Math.PI) / 60) + 0.5)
       clockworkState.detentIndexNearest = Math.round(angle / ((2 * Math.PI) / 60))
     }

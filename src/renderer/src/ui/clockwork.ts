@@ -357,7 +357,14 @@ export function snapToDetent(angle: number): number {
  * Uses ceiling to always show the next higher minute marker until that minute completes
  */
 export function snapToDetentForCountdown(angle: number): number {
-  const idx = Math.ceil(angle / STEP_RAD)
+  // Normalize angle to [0, 2π)
+  const normalizedAngle = normalizeAngle(angle)
+  // Calculate index using ceiling
+  let idx = Math.ceil(normalizedAngle / STEP_RAD)
+  // Handle wraparound: if idx equals STEPS (60), wrap to 0
+  if (idx >= STEPS) {
+    idx = 0
+  }
   return idx * STEP_RAD
 }
 

@@ -3,3 +3,21 @@ dist
 release
 .DS_Store
 *.log
+
+# Code signing certificates and keys (NEVER commit these!)
+*.p12
+*.p12.base64
+certificate.p12
+certificate.p12.base64
+*.cer
+*.key
+*.mobileprovision
+
+# Environment files (if any)
+.env
+.env.local
+.env.*.local
+
+# Temporary keychain files
+temp-build-keychain
+*.keychain-db.tmp

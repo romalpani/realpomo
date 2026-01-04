@@ -355,6 +355,7 @@ export function snapToDetent(angle: number): number {
 /**
  * Snap angle to detent for countdown display
  * Uses ceiling to always show the next higher minute marker until that minute completes
+ * Note: When angle is 0 (0 seconds), this correctly returns 0 (shows hand at 12 o'clock position)
  */
 export function snapToDetentForCountdown(angle: number): number {
   // Normalize angle to [0, 2π)

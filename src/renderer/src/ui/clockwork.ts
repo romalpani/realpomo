@@ -352,3 +352,12 @@ export function snapToDetent(angle: number): number {
   return idx * STEP_RAD
 }
 
+/**
+ * Snap angle to detent for countdown display
+ * Uses ceiling to always show the next higher minute marker until that minute completes
+ */
+export function snapToDetentForCountdown(angle: number): number {
+  const idx = Math.ceil(angle / STEP_RAD)
+  return idx * STEP_RAD
+}
+

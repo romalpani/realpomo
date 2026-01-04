@@ -33,6 +33,7 @@ const clock = createPomodoroClock({
   start: () => timer.start(),
   pause: () => timer.pause(),
   canEdit: () => true,
+  isRunning: () => timer.isRunning(),
   onMinuteStep: () => playSetTick()
 })
 

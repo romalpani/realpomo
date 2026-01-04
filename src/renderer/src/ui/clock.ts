@@ -10,7 +10,8 @@ import {
   endDrag,
   angleToSeconds,
   secondsToAngle,
-  snapToDetent
+  snapToDetent,
+  snapToDetentForCountdown
 } from './clockwork'
 
 type ClockOptions = {
@@ -21,6 +22,7 @@ type ClockOptions = {
   start: () => void
   pause: () => void
   canEdit: () => boolean
+  isRunning: () => boolean
   onMinuteStep?: (minute: number) => void
 }
 
@@ -43,7 +45,7 @@ export type ClockColor = {
 }
 
 export function createPomodoroClock(options: ClockOptions) {
-  const { host, maxSeconds, getSeconds, setSeconds, start, pause, canEdit, onMinuteStep } = options
+  const { host, maxSeconds, getSeconds, setSeconds, start, pause, canEdit, isRunning, onMinuteStep } = options
 
   host.replaceChildren()
 
@@ -621,8 +623,13 @@ export function createPomodoroClock(options: ClockOptions) {
     if (dragging || clockworkState.inSettleAnimation) {
       angle = clockworkState.angleDisplay
     } else {
-      // When not dragging, snap to nearest detent for realistic clock feel
-      angle = snapToDetent(angle)
+      // When timer is running (countdown), snap to next higher minute marker
+      // Otherwise (setting time), snap to nearest minute marker
+      if (isRunning() && t > 0) {
+        angle = snapToDetentForCountdown(angle)
+      } else {
+        angle = snapToDetent(angle)
+      }
     }
     
     const endX = center + sectorRadius * Math.sin(angle)
@@ -655,8 +662,13 @@ export function createPomodoroClock(options: ClockOptions) {
     if (!dragging) {
       const angle = secondsToAngle(seconds, maxSeconds)
       clockworkState.angleRaw = angle
-      // Snap display angle to detent for realistic feel
-      clockworkState.angleDisplay = snapToDetent(angle)
+      // When timer is running (countdown), snap to next higher minute marker
+      // Otherwise (setting time), snap to nearest minute marker
+      if (isRunning() && seconds > 0) {
+        clockworkState.angleDisplay = snapToDetentForCountdown(angle)
+      } else {
+        clockworkState.angleDisplay = snapToDetent(angle)
+      }
       clockworkState.detentIndexCommitted = Math.floor(angle / ((2 * Math.PI) / 60) + 0.5)
       clockworkState.detentIndexNearest = Math.round(angle / ((2 * Math.PI) / 60))
     }

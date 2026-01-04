@@ -59,7 +59,7 @@ jobs:
           fi
           if [ -n "${{ secrets.APPLE_ID }}" ]; then
             export APPLE_ID="${{ secrets.APPLE_ID }}"
-            export APPLE_ID_PASS="${{ secrets.APPLE_ID_PASS }}"
+            export APPLE_APP_SPECIFIC_PASSWORD="${{ secrets.APPLE_ID_PASS }}"
             export APPLE_TEAM_ID="${{ secrets.APPLE_TEAM_ID }}"
           fi
           # Explicitly disable publishing with --publish never flag

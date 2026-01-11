@@ -594,7 +594,7 @@ export function createPomodoroClock(options: ClockOptions) {
       
       const startTime = Date.now()
       
-      function animate() {
+      const animate = () => {
         const elapsed = Date.now() - startTime
         const progress = elapsed / duration
         

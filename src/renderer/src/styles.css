@@ -627,3 +627,55 @@ body.done .shell {
     transform: none;
   }
 }
+
+/* Update Notification Styles - Minimal */
+.update-notification {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 200ms ease;
+  pointer-events: none;
+  -webkit-app-region: no-drag;
+  display: none;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 6px;
+}
+
+.update-notification.visible {
+  opacity: 1;
+  pointer-events: auto;
+  display: flex;
+}
+
+.update-notification-message {
+  font-size: 11px;
+  color: var(--text);
+  font-weight: 500;
+  padding: 6px 0 6px 10px;
+}
+
+.update-notification-button {
+  background: var(--case);
+  border: none;
+  border-radius: 4px;
+  padding: 4px 10px;
+  margin: 4px 4px 4px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--white);
+  cursor: pointer;
+  transition: background 150ms ease;
+  -webkit-app-region: no-drag;
+  font-family: inherit;
+}
+
+.update-notification-button:hover {
+  background: var(--case-2);
+}
+
+.update-notification-button:active {
+  background: var(--green);
+}

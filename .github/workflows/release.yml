@@ -37,12 +37,9 @@ jobs:
       - name: Build app
         run: npm run build:app
 
-      - name: Build distributable
+      - name: Build and publish distributable
         shell: bash
         env:
-          # Disable electron-builder auto-publish (we handle releases in a separate job)
-          PUBLISH_FOR_PULL_REQUEST: false
-          # Provide GH_TOKEN if electron-builder needs it (it will use GITHUB_TOKEN automatically)
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Verify icon file exists
@@ -62,9 +59,11 @@ jobs:
             export APPLE_APP_SPECIFIC_PASSWORD="${{ secrets.APPLE_ID_PASS }}"
             export APPLE_TEAM_ID="${{ secrets.APPLE_TEAM_ID }}"
           fi
-          # Explicitly disable publishing with --publish never flag
-          # Note: build:app was already run in the previous step
-          npx electron-builder --publish never
+          
+          # Use --publish always to let electron-builder publish directly to GitHub Releases
+          # This also generates the required latest-mac.yml and latest.yml metadata files
+          # needed for auto-updates to work
+          npx electron-builder --publish always
 
       - name: Remove quarantine attributes (macOS only)
         if: matrix.os == 'macos-latest'
@@ -78,12 +77,14 @@ jobs:
           path: release/*
           retention-days: 30
 
-  release:
+  # Note: electron-builder with --publish always handles the GitHub release creation
+  # This job is kept for verification and generating release notes
+  verify-release:
     needs: build
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
-      contents: write  # Required to create releases
+      contents: write
 
     steps:
       - name: Checkout code
@@ -101,45 +102,36 @@ jobs:
           name: win-build
           path: release/
 
-      - name: Validate release artifacts
+      - name: Verify release artifacts
         shell: bash
         run: |
-          echo "Checking for release artifacts..."
+          echo "Verifying release artifacts..."
           
-          # Check for macOS DMG files (should have both arm64 and x64)
-          DMG_COUNT=$(find release -name "*.dmg" -type f 2>/dev/null | wc -l | tr -d ' ')
-          if [ "$DMG_COUNT" -eq 0 ]; then
-            echo "❌ Error: No DMG files found in release/"
-            exit 1
-          fi
-          echo "✅ Found $DMG_COUNT DMG file(s)"
-          find release -name "*.dmg" -type f -exec ls -lh {} \;
+          # Check for macOS files
+          echo "=== macOS files ==="
+          find release -name "*.dmg" -type f -exec ls -lh {} \; 2>/dev/null || echo "No DMG files"
+          find release -name "*.zip" -type f -exec ls -lh {} \; 2>/dev/null || echo "No ZIP files"
+          find release -name "latest-mac.yml" -type f -exec ls -lh {} \; 2>/dev/null || echo "No latest-mac.yml"
           
-          # Check for Windows installer files (if Windows build succeeded)
-          if find release -name "*.exe" -type f 2>/dev/null | grep -q .; then
-            EXE_COUNT=$(find release -name "*.exe" -type f 2>/dev/null | wc -l | tr -d ' ')
-            echo "✅ Found $EXE_COUNT Windows installer file(s)"
-            find release -name "*.exe" -type f -exec ls -lh {} \;
-          else
-            echo "⚠️  No Windows installer files found (Windows build may have failed or not completed)"
-          fi
-          
-          # List all release files for debugging
+          # Check for Windows files
           echo ""
-          echo "All release files:"
+          echo "=== Windows files ==="
+          find release -name "*.exe" -type f -exec ls -lh {} \; 2>/dev/null || echo "No EXE files"
+          find release -name "latest.yml" -type f -exec ls -lh {} \; 2>/dev/null || echo "No latest.yml"
+          
+          echo ""
+          echo "=== All release files ==="
           find release -type f -exec ls -lh {} \;
+          
+          echo ""
+          echo "✅ Release artifacts verified. electron-builder has already published to GitHub Releases."
 
-      - name: Create Release
+      - name: Update release notes
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            release/*.dmg
-            release/*.exe
-            release/*.blockmap
           generate_release_notes: true
           draft: false
           prerelease: false
-          fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

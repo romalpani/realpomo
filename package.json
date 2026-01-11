@@ -44,7 +44,13 @@
     "appId": "com.realpomo.app",
     "productName": "RealPomo",
     "icon": "build/icon.png",
-    "publish": null,
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "romalpani",
+        "repo": "realpomo"
+      }
+    ],
     "directories": {
       "output": "release"
     },
@@ -55,6 +61,13 @@
       "target": [
         {
           "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
           "arch": [
             "arm64",
             "x64"
@@ -81,6 +94,7 @@
     }
   },
   "dependencies": {
+    "electron-updater": "^6.7.3",
     "lucide": "^0.562.0"
   }
 }

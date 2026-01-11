@@ -149,6 +149,28 @@ app.whenReady().then(() => {
     }
   })
 
+  ipcMain.on('window:resize', (_event, height: number) => {
+    if (mainWindowRef && !mainWindowRef.isDestroyed()) {
+      const currentSize = mainWindowRef.getSize()
+      const currentPos = mainWindowRef.getPosition()
+      // Store top position before resize
+      const topBeforeResize = currentPos[1]
+      
+      // Resize the window (this may move the top position)
+      mainWindowRef.setSize(currentSize[0], height, false)
+      
+      // Get position after resize
+      const posAfterResize = mainWindowRef.getPosition()
+      
+      // Calculate how much the top moved and restore it
+      const topMoved = posAfterResize[1] - topBeforeResize
+      if (topMoved !== 0) {
+        // Restore original top position (grow/shrink from bottom)
+        mainWindowRef.setPosition(posAfterResize[0], topBeforeResize, false)
+      }
+    }
+  })
+
   app.on('activate', () => {
     log.info('App activated')
     if (BrowserWindow.getAllWindows().length === 0) {

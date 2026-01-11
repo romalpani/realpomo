@@ -1,10 +1,13 @@
 // Static import - Vite will handle this correctly in both dev and production
 // In production, this becomes a data URL or a proper asset URL
 import tickSoundUrl from '../assets/clock_tick_extracted.wav?url'
+import pencilClickSoundUrl from '../assets/pencil_click_extracted.wav?url'
 
 let audioCtx: AudioContext | null = null
 let tickBuffer: AudioBuffer | null = null
 let tickBufferLoading: Promise<AudioBuffer> | null = null
+let pencilClickBuffer: AudioBuffer | null = null
+let pencilClickBufferLoading: Promise<AudioBuffer> | null = null
 
 // Rate limiting for tick sounds - prevent reverb from rapid ticks
 const MIN_TICK_INTERVAL_MS = 60 // Minimum 60ms between ticks
@@ -139,6 +142,82 @@ function playTickSound(): void {
   gain.connect(c.destination)
   
   // No fades, no reverb, no tail - instant start/stop
+  source.connect(gain)
+  source.start(0)
+}
+
+async function loadPencilClickBuffer(): Promise<AudioBuffer> {
+  if (pencilClickBuffer) return pencilClickBuffer
+  if (pencilClickBufferLoading) return pencilClickBufferLoading
+
+  pencilClickBufferLoading = (async () => {
+    try {
+      let arrayBuffer: ArrayBuffer
+      
+      // Handle data URLs directly (production build)
+      if (pencilClickSoundUrl.startsWith('data:')) {
+        const base64Data = pencilClickSoundUrl.split(',')[1]
+        const binaryString = atob(base64Data)
+        const bytes = new Uint8Array(binaryString.length)
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i)
+        }
+        arrayBuffer = bytes.buffer
+      } else {
+        // Handle regular URLs (dev mode)
+        const response = await fetch(pencilClickSoundUrl)
+        if (!response.ok) {
+          throw new Error(`Failed to fetch pencil click sound: ${response.status} ${response.statusText}`)
+        }
+        arrayBuffer = await response.arrayBuffer()
+      }
+      
+      const buffer = await ctx().decodeAudioData(arrayBuffer)
+      pencilClickBuffer = buffer
+      return buffer
+    } catch (error) {
+      console.error('Failed to load pencil click sound:', error)
+      throw error
+    } finally {
+      pencilClickBufferLoading = null
+    }
+  })()
+
+  return pencilClickBufferLoading
+}
+
+function getPencilClickBuffer(): AudioBuffer | null {
+  return pencilClickBuffer
+}
+
+export function playPencilClick(): void {
+  const buffer = getPencilClickBuffer()
+  if (!buffer) {
+    loadPencilClickBuffer()
+      .then(() => {
+        playPencilClickSound()
+      })
+      .catch((error) => {
+        console.warn('Pencil click sound failed to load, continuing without sound:', error)
+      })
+    return
+  }
+
+  playPencilClickSound()
+}
+
+function playPencilClickSound(): void {
+  const buffer = getPencilClickBuffer()
+  if (!buffer) return
+
+  const c = ctx()
+  const source = c.createBufferSource()
+  source.buffer = buffer
+  
+  const gain = c.createGain()
+  gain.gain.value = 0.4
+  gain.connect(c.destination)
+  
   source.connect(gain)
   source.start(0)
 }

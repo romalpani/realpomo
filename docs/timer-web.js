@@ -587,7 +587,9 @@
   };
 
   function createPomodoroClock(options) {
-    const { host, maxSeconds, getSeconds, setSeconds, start, pause, canEdit, isRunning, onMinuteStep, enableSounds } = options;
+    const { host, maxSeconds, getSeconds, setSeconds, start, pause, canEdit, isRunning, onMinuteStep, enableSounds, showPresets, showDigital } = options;
+    const shouldShowPresets = showPresets !== false;
+    const shouldShowDigital = showDigital !== false;
 
     host.replaceChildren();
 
@@ -836,11 +838,18 @@
       quick.appendChild(btn);
     }
 
-    display.appendChild(timeEl);
-    display.appendChild(quick);
+    if (shouldShowDigital) {
+      display.appendChild(timeEl);
+    }
+    if (shouldShowPresets) {
+      display.appendChild(quick);
+    }
 
     clockStack.appendChild(clockCase);
-    clockStack.appendChild(display);
+    // Only append display if it has children
+    if (display.children.length > 0) {
+      clockStack.appendChild(display);
+    }
 
     content.appendChild(clockStack);
     shell.appendChild(content);
@@ -905,7 +914,9 @@
     function update(seconds) {
       // Clamp seconds to valid range to prevent hand from appearing incorrectly
       const clampedSeconds = clamp(seconds, 0, maxSeconds);
-      timeEl.textContent = formatTimerTime(clampedSeconds);
+      if (shouldShowDigital && timeEl) {
+        timeEl.textContent = formatTimerTime(clampedSeconds);
+      }
       
       if (!dragging) {
         const angle = secondsToAngle(clampedSeconds, maxSeconds);
@@ -930,7 +941,9 @@
         const seconds = angleToSeconds(clockworkState.angleDisplay, maxSeconds);
         const clampedSeconds = clamp(seconds, 0, maxSeconds);
         setSeconds(clampedSeconds);
-        timeEl.textContent = formatTimerTime(clampedSeconds);
+        if (shouldShowDigital && timeEl) {
+          timeEl.textContent = formatTimerTime(clampedSeconds);
+        }
         updateSector(clampedSeconds);
         rafId = requestAnimationFrame(animateSettle);
       } else {
@@ -1292,7 +1305,9 @@
       onMinuteStep: function(minute) {
         // Optional callback
       },
-      enableSounds: enableSounds
+      enableSounds: enableSounds,
+      showPresets: showPresets,
+      showDigital: showDigital
     });
 
     // Store cleanup function

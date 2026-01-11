@@ -27,8 +27,8 @@
           maxSeconds: 3600,
           initialSeconds: 0,
           enableSounds: true,
-          showPresets: true,
-          showDigital: true
+          showPresets: false,
+          showDigital: false
         });
       } catch (error) {
         // Silently fail if timer initialization fails

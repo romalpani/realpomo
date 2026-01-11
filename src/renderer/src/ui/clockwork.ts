@@ -114,19 +114,22 @@ function committedDetentIndex(angle: number): number {
 }
 
 /**
+ * Normalize angle delta to [-π, π] range
+ */
+function normalizeDelta(delta: number): number {
+  if (delta > Math.PI) return delta - 2 * Math.PI
+  if (delta < -Math.PI) return delta + 2 * Math.PI
+  return delta
+}
+
+/**
  * Apply magnet pull toward nearest detent (only in detent zone)
  */
 function applyMagnet(angle: number, velocityRadS: number): number {
   const idxN = nearestDetentIndex(angle)
   const detentAngle = idxN * STEP_RAD
-  const delta = angle - detentAngle
-  
-  // Normalize delta to [-π, π] range
-  let normalizedDelta = delta
-  if (normalizedDelta > Math.PI) normalizedDelta -= 2 * Math.PI
-  if (normalizedDelta < -Math.PI) normalizedDelta += 2 * Math.PI
-  
-  const dist = Math.abs(normalizedDelta)
+  const delta = normalizeDelta(angle - detentAngle)
+  const dist = Math.abs(delta)
   const zone = DETENT_ZONE_FRAC * STEP_RAD
 
   // Velocity-sensitive strength
@@ -136,7 +139,7 @@ function applyMagnet(angle: number, velocityRadS: number): number {
   if (dist < zone) {
     const t = 1 - (dist / zone) // 0 at zone edge, 1 at detent
     const pull = smoothstep(t) * strength
-    return angle - normalizedDelta * pull
+    return angle - delta * pull
   }
   
   return angle
@@ -262,20 +265,12 @@ export function snapOnRelease(
   state.detentIndexNearest = snappedIndex
   state.lastMinuteCrossed = snappedMinute
   
-  // Start settle animation from current display position
+  // Add subtle overshoot in the direction of movement
+  const angleDelta = normalizeDelta(snappedAngle - state.angleRaw)
+  const sign = Math.sign(angleDelta) || 1
+  
   state.inSettleAnimation = true
   state.settleStartTime = performance.now()
-  state.settleFrom = state.angleDisplay
-  state.settleTo = snappedAngle
-  
-  // Add subtle overshoot in the direction of movement
-  const angleDelta = snappedAngle - state.angleRaw
-  // Normalize delta to [-π, π]
-  let normalizedDelta = angleDelta
-  if (normalizedDelta > Math.PI) normalizedDelta -= 2 * Math.PI
-  if (normalizedDelta < -Math.PI) normalizedDelta += 2 * Math.PI
-  
-  const sign = Math.sign(normalizedDelta) || 1
   state.settleFrom = snappedAngle + sign * OVERSHOOT_RAD
   state.settleTo = snappedAngle
   
@@ -286,13 +281,11 @@ export function snapOnRelease(
  * Start settle animation after snap
  */
 export function startSettle(state: ClockworkState): void {
+  // Add overshoot in the direction of movement
+  const sign = Math.sign(state.velocityRadS) || 1
+  
   state.inSettleAnimation = true
   state.settleStartTime = performance.now()
-  state.settleFrom = state.angleDisplay
-  state.settleTo = state.angleTarget
-  
-  // Add overshoot
-  const sign = Math.sign(state.velocityRadS) || 1
   state.settleFrom = state.angleTarget + sign * OVERSHOOT_RAD
   state.settleTo = state.angleTarget
 }

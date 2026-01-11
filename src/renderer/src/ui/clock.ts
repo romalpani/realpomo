@@ -1,6 +1,6 @@
 import { clamp } from './math'
 import { formatTimerTime } from './time'
-import { playSetTick } from './sound'
+import { playSetTick, playPencilClick } from './sound'
 import {
   createClockworkState,
   startDrag,
@@ -302,6 +302,38 @@ export function createPomodoroClock(options: ClockOptions) {
   }
 
   display.appendChild(timeEl)
+
+  // Create todo item container (before presets)
+  const todoContainer = document.createElement('div')
+  todoContainer.className = 'todo-container no-drag'
+  
+  const todoItem = document.createElement('div')
+  todoItem.className = 'todo-item'
+  
+  const todoCheckbox = document.createElement('input')
+  todoCheckbox.type = 'checkbox'
+  todoCheckbox.className = 'todo-checkbox'
+  todoCheckbox.disabled = true
+  todoCheckbox.setAttribute('aria-label', 'Mark task as complete')
+  
+  const todoInput = document.createElement('input')
+  todoInput.type = 'text'
+  todoInput.className = 'todo-input'
+  todoInput.placeholder = 'Add a task to focus on'
+  todoInput.setAttribute('aria-label', 'Task input')
+  todoInput.setAttribute('role', 'textbox')
+  
+  // Typing indicator
+  const typingIndicator = document.createElement('div')
+  typingIndicator.className = 'todo-typing-indicator'
+  typingIndicator.setAttribute('aria-hidden', 'true')
+  
+  todoItem.appendChild(todoCheckbox)
+  todoItem.appendChild(todoInput)
+  todoItem.appendChild(typingIndicator)
+  todoContainer.appendChild(todoItem)
+  
+  display.appendChild(todoContainer)
   display.appendChild(quick)
 
   clockStack.appendChild(clockCase)
@@ -314,24 +346,70 @@ export function createPomodoroClock(options: ClockOptions) {
   // Context menu state
   let showTimer = true
   let showPresets = true
+  let showTodo = true
 
   // Load saved preferences
+  let savedTaskText = ''
   try {
     const savedTimer = localStorage.getItem('realpomo:showTimer')
     const savedPresets = localStorage.getItem('realpomo:showPresets')
+    const savedTodo = localStorage.getItem('realpomo:showTodo')
+    const savedTask = localStorage.getItem('realpomo:taskText')
     if (savedTimer !== null) showTimer = savedTimer === 'true'
     if (savedPresets !== null) showPresets = savedPresets === 'true'
+    if (savedTodo !== null) showTodo = savedTodo === 'true'
+    if (savedTask !== null) savedTaskText = savedTask
   } catch {
     // Ignore localStorage errors
+  }
+
+  // Calculate window height based on actual content measurements
+  function calculateWindowHeight(): void {
+    // Use double RAF to ensure DOM has fully updated
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (typeof window !== 'undefined' && window.timerApi?.requestResize) {
+          // Measure the clockStack which contains clock + display + gap
+          // This already includes all visible content
+          const clockStackRect = clockStack.getBoundingClientRect()
+          const contentHeight = clockStackRect.height
+          
+          // Padding from .shell-content (28px top + 20px bottom = 48px)
+          const padding = 48
+          
+          // Calculate total height: content + padding
+          const totalHeight = Math.ceil(contentHeight + padding)
+          
+          // Ensure minimum height of at least clock size + padding
+          const minHeight = 400 + padding
+          const newHeight = Math.max(minHeight, totalHeight)
+          
+          window.timerApi.requestResize(newHeight)
+        }
+      })
+    })
+  }
+  
+  // Update todo item width to match clock width
+  function updateTodoWidth(): void {
+    requestAnimationFrame(() => {
+      const clockCaseRect = clockCase.getBoundingClientRect()
+      const clockWidth = clockCaseRect.width
+      if (clockWidth > 0) {
+        todoItem.style.width = `${clockWidth}px`
+        todoItem.style.maxWidth = `${clockWidth}px`
+      }
+    })
   }
 
   // Apply initial visibility
   function updateVisibility(): void {
     timeEl.style.display = showTimer ? '' : 'none'
     quick.style.display = showPresets ? '' : 'none'
+    todoContainer.style.display = showTodo ? '' : 'none'
     
-    // Hide display container if both children are hidden
-    if (!showTimer && !showPresets) {
+    // Hide display container if all children are hidden
+    if (!showTimer && !showPresets && !showTodo) {
       display.style.display = 'none'
       // Ensure no pointer events when hidden
       display.style.pointerEvents = 'none'
@@ -339,9 +417,316 @@ export function createPomodoroClock(options: ClockOptions) {
       display.style.display = ''
       display.style.pointerEvents = ''
     }
+    
+    // Resize window based on actual content measurements
+    setTimeout(() => {
+      calculateWindowHeight()
+      updateTodoWidth()
+    }, 50) // Small delay to ensure DOM has updated
   }
   
   updateVisibility()
+  
+  // Restore saved task text
+  if (savedTaskText) {
+    todoInput.value = savedTaskText
+    todoCheckbox.disabled = false
+  }
+  
+  // Add fade-in animation on first appearance
+  if (showTodo) {
+    requestAnimationFrame(() => {
+      todoContainer.classList.add('todo-fade-in')
+    })
+  }
+  
+  // Initial window resize and todo width update after everything is set up
+  setTimeout(() => {
+    calculateWindowHeight()
+    updateTodoWidth()
+  }, 100)
+  
+  // Update todo width on window resize
+  window.addEventListener('resize', () => {
+    updateTodoWidth()
+  })
+
+  // Color utility functions
+  function hexToRgb(hex: string): [number, number, number] {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+    return result ? [
+      parseInt(result[1], 16),
+      parseInt(result[2], 16),
+      parseInt(result[3], 16)
+    ] : [0, 0, 0]
+  }
+
+  function rgbToHex(r: number, g: number, b: number): string {
+    return `#${[r, g, b].map(x => {
+      const hex = Math.round(x).toString(16)
+      return hex.length === 1 ? '0' + hex : hex
+    }).join('')}`
+  }
+
+  function rgbToRgba(r: number, g: number, b: number, alpha: number): string {
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`
+  }
+
+  function lighten(color: string, amount: number): string {
+    const [r, g, b] = hexToRgb(color)
+    return rgbToHex(
+      Math.min(255, r + amount),
+      Math.min(255, g + amount),
+      Math.min(255, b + amount)
+    )
+  }
+
+  function darken(color: string, amount: number): string {
+    const [r, g, b] = hexToRgb(color)
+    return rgbToHex(
+      Math.max(0, r - amount),
+      Math.max(0, g - amount),
+      Math.max(0, b - amount)
+    )
+  }
+
+  // Theme-aware confetti animation with pop effect from random sides
+  function createConfetti(): void {
+    // Generate theme-aware colors from current theme
+    const baseColor = currentColor.sector
+    const caseColor = currentColor.case
+    const knobColor = currentColor.knob
+    
+    // Create color palette from theme
+    const colors = [
+      baseColor,
+      lighten(baseColor, 40),
+      lighten(baseColor, 60),
+      caseColor,
+      lighten(caseColor, 30),
+      knobColor,
+      lighten(knobColor, 20),
+      darken(baseColor, 20)
+    ]
+    
+    const confettiCount = 120
+    const duration = 2000
+    
+    // Get checkbox position as center point
+    const checkboxRect = todoCheckbox.getBoundingClientRect()
+    const centerX = checkboxRect.left + checkboxRect.width / 2
+    const centerY = checkboxRect.top + checkboxRect.height / 2
+    
+    // Randomly choose a side/corner to pop from
+    const sides = ['top', 'bottom', 'left', 'right', 'top-left', 'top-right', 'bottom-left', 'bottom-right']
+    const popSide = sides[Math.floor(Math.random() * sides.length)]
+    
+    // Determine starting position based on pop side
+    let startX = centerX
+    let startY = centerY
+    const viewportWidth = window.innerWidth
+    const viewportHeight = window.innerHeight
+    
+    switch (popSide) {
+      case 'top':
+        startX = Math.random() * viewportWidth
+        startY = -20
+        break
+      case 'bottom':
+        startX = Math.random() * viewportWidth
+        startY = viewportHeight + 20
+        break
+      case 'left':
+        startX = -20
+        startY = Math.random() * viewportHeight
+        break
+      case 'right':
+        startX = viewportWidth + 20
+        startY = Math.random() * viewportHeight
+        break
+      case 'top-left':
+        startX = -20
+        startY = -20
+        break
+      case 'top-right':
+        startX = viewportWidth + 20
+        startY = -20
+        break
+      case 'bottom-left':
+        startX = -20
+        startY = viewportHeight + 20
+        break
+      case 'bottom-right':
+        startX = viewportWidth + 20
+        startY = viewportHeight + 20
+        break
+    }
+    
+    for (let i = 0; i < confettiCount; i++) {
+      const confetti = document.createElement('div')
+      confetti.style.position = 'fixed'
+      confetti.style.width = `${Math.random() * 8 + 4}px`
+      confetti.style.height = confetti.style.width
+      confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)]
+      confetti.style.left = `${startX}px`
+      confetti.style.top = `${startY}px`
+      confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0'
+      confetti.style.pointerEvents = 'none'
+      confetti.style.zIndex = '9999'
+      confetti.style.opacity = '0'
+      
+      document.body.appendChild(confetti)
+      
+      // Calculate angle from start position to center (explosion effect)
+      const dx = centerX - startX
+      const dy = centerY - startY
+      const baseAngle = Math.atan2(dy, dx)
+      
+      // Add random spread around the base angle
+      const angleSpread = Math.PI * 0.6 // 60 degree spread
+      const angle = baseAngle + (Math.random() - 0.5) * angleSpread
+      
+      // Random velocity with explosion effect
+      const baseVelocity = 200 + Math.random() * 300
+      const velocity = baseVelocity * (0.7 + Math.random() * 0.6)
+      
+      const rotation = (Math.random() - 0.5) * 720
+      
+      const startTime = Date.now()
+      
+      const animate = () => {
+        const elapsed = Date.now() - startTime
+        const progress = elapsed / duration
+        
+        if (progress >= 1) {
+          confetti.remove()
+          return
+        }
+        
+        // Explosion effect - fast initial velocity, then deceleration
+        const distance = velocity * progress * (1 - progress * 0.5)
+        const x = startX + Math.cos(angle) * distance
+        const y = startY + Math.sin(angle) * distance + 0.5 * 300 * progress * progress
+        const currentRotation = rotation * progress
+        
+        // Fade in quickly, then fade out
+        const opacity = progress < 0.1 ? progress * 10 : 0.9 * (1 - progress)
+        
+        confetti.style.transform = `translate(${x - startX}px, ${y - startY}px) rotate(${currentRotation}deg)`
+        confetti.style.opacity = String(opacity)
+        
+        requestAnimationFrame(animate)
+      }
+      
+      requestAnimationFrame(animate)
+    }
+  }
+
+  // Prevent rapid clicks during disabled state
+  let isCompleting = false
+  
+  // Typing indicator state
+  let typingTimeout: number | null = null
+  
+  // Update checkbox color when theme changes
+  function updateCheckboxColor(): void {
+    const sectorColor = currentColor.sector
+    const [r, g, b] = hexToRgb(sectorColor)
+    // Create lighter tone (30% opacity) for active/press state
+    const lighterColor = rgbToRgba(r, g, b, 0.3)
+    
+    todoCheckbox.style.accentColor = sectorColor
+    todoCheckbox.style.setProperty('--checkbox-color', sectorColor)
+    todoCheckbox.style.setProperty('--checkbox-color-light', lighterColor)
+  }
+  
+  // Initial checkbox color
+  updateCheckboxColor()
+
+  // Todo item functionality
+  todoInput.addEventListener('input', () => {
+    const hasText = todoInput.value.trim().length > 0
+    
+    // Enable/disable checkbox based on text
+    if (hasText && todoCheckbox.disabled) {
+      todoCheckbox.disabled = false
+    } else if (!hasText && !todoCheckbox.disabled) {
+      todoCheckbox.disabled = true
+    }
+    
+    // Save task text to localStorage
+    try {
+      localStorage.setItem('realpomo:taskText', todoInput.value)
+    } catch {
+      // Ignore localStorage errors
+    }
+    
+    // Show typing indicator
+    if (hasText) {
+      typingIndicator.classList.add('typing-active')
+      if (typingTimeout) clearTimeout(typingTimeout)
+      typingTimeout = window.setTimeout(() => {
+        typingIndicator.classList.remove('typing-active')
+      }, 1000)
+    } else {
+      typingIndicator.classList.remove('typing-active')
+    }
+  })
+
+  // Keyboard support
+  todoInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      todoInput.value = ''
+      todoInput.dispatchEvent(new Event('input'))
+      todoInput.blur()
+    }
+  })
+
+  todoCheckbox.addEventListener('change', () => {
+    if (todoCheckbox.checked && !isCompleting) {
+      isCompleting = true
+      
+      // Play pencil click sound
+      playPencilClick()
+      
+      // Show theme-aware confetti animation
+      createConfetti()
+      
+      // Disable the todo item
+      todoItem.classList.add('todo-completed')
+      todoInput.disabled = true
+      todoCheckbox.disabled = true
+      
+      // Clear saved task text
+      try {
+        localStorage.removeItem('realpomo:taskText')
+      } catch {
+        // Ignore localStorage errors
+      }
+      
+      // After 1 second, reset
+      setTimeout(() => {
+        isCompleting = false
+        todoItem.classList.remove('todo-completed')
+        todoInput.disabled = false
+        todoInput.value = ''
+        todoInput.dispatchEvent(new Event('input'))
+        todoCheckbox.checked = false
+        todoCheckbox.disabled = true
+        typingIndicator.classList.remove('typing-active')
+      }, 1000)
+    }
+  })
+  
+  // Focus management for accessibility
+  todoInput.addEventListener('focus', () => {
+    todoItem.classList.add('todo-focused')
+  })
+  
+  todoInput.addEventListener('blur', () => {
+    todoItem.classList.remove('todo-focused')
+  })
 
   // Create context menu - append to body to avoid stacking context issues
   const contextMenu = document.createElement('div')
@@ -426,7 +811,7 @@ export function createPomodoroClock(options: ClockOptions) {
   function updateContextMenu(): void {
     contextMenu.innerHTML = ''
     
-    const timerItem = createMenuItem('Show Digital Timer', showTimer, () => {
+    const timerItem = createMenuItem('Show digital timer', showTimer, () => {
       showTimer = !showTimer
       try {
         localStorage.setItem('realpomo:showTimer', String(showTimer))
@@ -436,7 +821,17 @@ export function createPomodoroClock(options: ClockOptions) {
       updateVisibility()
     })
     
-    const presetsItem = createMenuItem('Show Presets', showPresets, () => {
+    const todoItem = createMenuItem('Show to-do', showTodo, () => {
+      showTodo = !showTodo
+      try {
+        localStorage.setItem('realpomo:showTodo', String(showTodo))
+      } catch {
+        // Ignore localStorage errors
+      }
+      updateVisibility()
+    })
+    
+    const presetsItem = createMenuItem('Show presets', showPresets, () => {
       showPresets = !showPresets
       try {
         localStorage.setItem('realpomo:showPresets', String(showPresets))
@@ -447,6 +842,7 @@ export function createPomodoroClock(options: ClockOptions) {
     })
     
     contextMenu.appendChild(timerItem)
+    contextMenu.appendChild(todoItem)
     contextMenu.appendChild(presetsItem)
   }
 
@@ -620,7 +1016,10 @@ export function createPomodoroClock(options: ClockOptions) {
    * Otherwise (timer paused/stopped or at 0), use nearest snap for setting time
    */
   function getSnapFunction(seconds: number): (angle: number) => number {
-    return isRunning() && seconds > 0 ? snapToDetentForCountdown : snapToDetent
+    if (isRunning() && seconds > 0) {
+      return snapToDetentForCountdown
+    }
+    return snapToDetent
   }
 
   function updateSector(seconds: number): void {
@@ -961,6 +1360,7 @@ export function createPomodoroClock(options: ClockOptions) {
       clockCase.style.background = color.case
       knobBase.setAttribute('fill', color.knob)
       sector.setAttribute('fill', color.sector)
+      updateCheckboxColor()
     },
     getColor(): ClockColor {
       return { ...currentColor }

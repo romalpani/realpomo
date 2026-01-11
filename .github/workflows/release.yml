@@ -40,7 +40,7 @@ jobs:
       - name: Build app
         run: npm run build:app
 
-      - name: Build and publish distributable
+      - name: Build distributable
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -63,10 +63,8 @@ jobs:
             export APPLE_TEAM_ID="${{ secrets.APPLE_TEAM_ID }}"
           fi
           
-          # Use --publish always to let electron-builder publish directly to GitHub Releases
-          # This also generates the required latest-mac.yml and latest.yml metadata files
-          # needed for auto-updates to work
-          npx electron-builder --publish always
+          # Build without publishing (publishing happens in separate job to avoid race conditions)
+          npx electron-builder --${{ matrix.platform }}
 
       - name: Remove quarantine attributes (macOS only)
         if: matrix.os == 'macos-latest'
@@ -80,9 +78,8 @@ jobs:
           path: release/*
           retention-days: 30
 
-  # Note: electron-builder with --publish always handles the GitHub release creation
-  # This job is kept for verification and generating release notes
-  verify-release:
+  # Publish all built artifacts to GitHub Releases
+  publish:
     needs: build
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
@@ -104,6 +101,7 @@ jobs:
         with:
           name: win-build
           path: release/
+          merge-multiple: true
 
       - name: Verify release artifacts
         shell: bash
@@ -125,16 +123,30 @@ jobs:
           echo ""
           echo "=== All release files ==="
           find release -type f -exec ls -lh {} \;
-          
-          echo ""
-          echo "✅ Release artifacts verified. electron-builder has already published to GitHub Releases."
 
-      - name: Update release notes
+      - name: Extract tag name
+        id: tag
+        shell: bash
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "Tag name: $TAG_NAME"
+
+      - name: Create or update GitHub Release
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: Release ${{ steps.tag.outputs.tag }}
           generate_release_notes: true
           draft: false
           prerelease: false
+          files: |
+            release/**/*.dmg
+            release/**/*.zip
+            release/**/*.exe
+            release/**/*.blockmap
+            release/**/latest-mac.yml
+            release/**/latest.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

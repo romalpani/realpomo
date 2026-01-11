@@ -319,8 +319,14 @@
       // Error state - keep buttons functional but link to releases page
       if (isValidFallback) {
         downloadBtn.href = fallbackUrl;
+        downloadBtn.removeAttribute('download');
+        downloadBtn.setAttribute('target', '_blank');
+        downloadBtn.setAttribute('rel', 'noopener noreferrer');
         if (downloadBtnSecondary) {
           downloadBtnSecondary.href = fallbackUrl;
+          downloadBtnSecondary.removeAttribute('download');
+          downloadBtnSecondary.setAttribute('target', '_blank');
+          downloadBtnSecondary.setAttribute('rel', 'noopener noreferrer');
         }
       }
       downloadBtn.classList.remove('loading');
@@ -359,10 +365,15 @@
       if (arm64Asset && isValidAsset(arm64Asset)) {
         downloadBtn.href = arm64Asset.browser_download_url;
         downloadBtn.download = sanitizeString(arm64Asset.name);
+        downloadBtn.removeAttribute('target');
+        downloadBtn.removeAttribute('rel');
         downloadBtn.textContent = 'Download for Apple silicon';
         downloadBtn.setAttribute('aria-label', 'Download for Apple silicon');
       } else if (isValidFallback) {
         downloadBtn.href = fallbackUrl;
+        downloadBtn.removeAttribute('download');
+        downloadBtn.setAttribute('target', '_blank');
+        downloadBtn.setAttribute('rel', 'noopener noreferrer');
         downloadBtn.textContent = 'Download for Apple silicon';
       }
 
@@ -371,11 +382,16 @@
         if (x64Asset && isValidAsset(x64Asset)) {
           downloadBtnSecondary.href = x64Asset.browser_download_url;
           downloadBtnSecondary.download = sanitizeString(x64Asset.name);
+          downloadBtnSecondary.removeAttribute('target');
+          downloadBtnSecondary.removeAttribute('rel');
           downloadBtnSecondary.classList.remove('hidden');
           downloadBtnSecondary.setAttribute('aria-label', 'Download for Intel chip');
         } else if (isValidFallback) {
           // Show secondary link even if x64 asset not found (links to releases page)
           downloadBtnSecondary.href = fallbackUrl;
+          downloadBtnSecondary.removeAttribute('download');
+          downloadBtnSecondary.setAttribute('target', '_blank');
+          downloadBtnSecondary.setAttribute('rel', 'noopener noreferrer');
           downloadBtnSecondary.classList.remove('hidden');
           downloadBtnSecondary.setAttribute('aria-label', 'Download for Intel chip');
         } else {
@@ -403,10 +419,15 @@
       if (winAsset && isValidAsset(winAsset)) {
         downloadBtn.href = winAsset.browser_download_url;
         downloadBtn.download = sanitizeString(winAsset.name);
+        downloadBtn.removeAttribute('target');
+        downloadBtn.removeAttribute('rel');
         downloadBtn.textContent = 'Download';
         downloadBtn.setAttribute('aria-label', 'Download for Windows');
       } else if (isValidFallback) {
         downloadBtn.href = fallbackUrl;
+        downloadBtn.removeAttribute('download');
+        downloadBtn.setAttribute('target', '_blank');
+        downloadBtn.setAttribute('rel', 'noopener noreferrer');
         downloadBtn.textContent = 'Download';
       }
 
@@ -415,6 +436,9 @@
       // Unknown platform - default to fallback
       if (isValidFallback) {
         downloadBtn.href = fallbackUrl;
+        downloadBtn.removeAttribute('download');
+        downloadBtn.setAttribute('target', '_blank');
+        downloadBtn.setAttribute('rel', 'noopener noreferrer');
         downloadBtn.textContent = 'Download';
       }
       if (downloadBtnSecondary) {
@@ -452,6 +476,9 @@
       const fallbackUrl = `${CONFIG.GITHUB_BASE}/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}/releases/latest`;
       if (isValidUrl(fallbackUrl, 'github.com') && downloadBtn) {
         downloadBtn.href = fallbackUrl;
+        downloadBtn.removeAttribute('download');
+        downloadBtn.setAttribute('target', '_blank');
+        downloadBtn.setAttribute('rel', 'noopener noreferrer');
       }
     }
   }

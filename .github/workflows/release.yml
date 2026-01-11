@@ -132,6 +132,30 @@ jobs:
           echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
           echo "Tag name: $TAG_NAME"
 
+      - name: Prepare release files
+        shell: bash
+        run: |
+          # Create a clean directory with only the files we want to upload
+          mkdir -p release-assets
+          
+          # Copy only the installer/distribution files (exclude unpacked directories)
+          # macOS files
+          find release -maxdepth 1 -type f -name "*.dmg" -exec cp {} release-assets/ \;
+          find release -maxdepth 1 -type f -name "*-mac.zip" -exec cp {} release-assets/ \;
+          
+          # Windows installer (NSIS setup file)
+          find release -maxdepth 1 -type f -name "RealPomo Setup*.exe" -exec cp {} release-assets/ \;
+          
+          # Blockmap files
+          find release -maxdepth 1 -type f -name "*.blockmap" -exec cp {} release-assets/ \;
+          
+          # Metadata files
+          find release -maxdepth 1 -type f \( -name "latest-mac.yml" -o -name "latest.yml" \) -exec cp {} release-assets/ \;
+          
+          # List what we're about to upload
+          echo "Files to upload:"
+          ls -lh release-assets/ || echo "No files found"
+
       - name: Create or update GitHub Release
         uses: softprops/action-gh-release@v1
         with:
@@ -140,13 +164,7 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: false
-          files: |
-            release/**/*.dmg
-            release/**/*.zip
-            release/**/*.exe
-            release/**/*.blockmap
-            release/**/latest-mac.yml
-            release/**/latest.yml
+          files: release-assets/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

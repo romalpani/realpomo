@@ -23,23 +23,18 @@ function createWindow(): BrowserWindow {
     useContentSize: true,
     resizable: false,
     show: false,
-    backgroundColor: '#00000000',
-    transparent: true,
-    ...(process.platform === 'darwin'
-      ? {
-          vibrancy: 'under-window',
-          visualEffectState: 'active'
-        }
-      : {}),
+    backgroundColor: '#0d4b2a',
+    title: 'RealPomo',
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
     ...(process.platform === 'win32'
       ? {
-          // Windows 11+ (when supported) gives a native translucent material.
-          // Falls back gracefully on older systems.
-          backgroundMaterial: 'mica'
+          titleBarOverlay: {
+            color: '#0d4b2a',
+            symbolColor: '#ffffff',
+            height: 32
+          }
         }
       : {}),
-    title: 'RealPomo',
-    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     autoHideMenuBar: true,
     webPreferences: {
       contextIsolation: true,

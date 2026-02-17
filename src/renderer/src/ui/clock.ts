@@ -376,9 +376,15 @@ export function createPomodoroClock(options: ClockOptions) {
           
           // Padding from .shell-content (28px top + 20px bottom = 48px)
           const padding = 48
+
+          // Account for titlebar overlay on Windows
+          const chromeH = parseInt(
+            getComputedStyle(document.documentElement).getPropertyValue('--chrome-h') || '0',
+            10
+          )
           
-          // Calculate total height: content + padding
-          const totalHeight = Math.ceil(contentHeight + padding)
+          // Calculate total height: content + padding + chrome
+          const totalHeight = Math.ceil(contentHeight + padding + chromeH)
           
           // Ensure minimum height of at least clock size + padding
           const minHeight = 400 + padding

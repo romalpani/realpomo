@@ -7,7 +7,55 @@ on:
   workflow_dispatch:  # Allows manual triggering
 
 jobs:
+  test:
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify release is from main branch
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        run: |
+          TAG_SHA=$(git rev-list -n 1 ${{ github.ref }})
+          if ! git branch -r --contains "$TAG_SHA" | grep -q 'origin/main'; then
+            echo "❌ Release tags must be created from the main branch"
+            exit 1
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Install Playwright dependencies
+        run: npx playwright install --with-deps
+
+      - name: E2E tests
+        run: npm run test:e2e
+
   build:
+    needs: test
     strategy:
       matrix:
         os: [macos-latest, windows-latest]
@@ -107,22 +155,53 @@ jobs:
         shell: bash
         run: |
           echo "Verifying release artifacts..."
-          
-          # Check for macOS files
-          echo "=== macOS files ==="
-          find release -name "*.dmg" -type f -exec ls -lh {} \; 2>/dev/null || echo "No DMG files"
-          find release -name "*.zip" -type f -exec ls -lh {} \; 2>/dev/null || echo "No ZIP files"
-          find release -name "latest-mac.yml" -type f -exec ls -lh {} \; 2>/dev/null || echo "No latest-mac.yml"
-          
-          # Check for Windows files
-          echo ""
-          echo "=== Windows files ==="
-          find release -name "*.exe" -type f -exec ls -lh {} \; 2>/dev/null || echo "No EXE files"
-          find release -name "latest.yml" -type f -exec ls -lh {} \; 2>/dev/null || echo "No latest.yml"
-          
+          FAILED=0
+
+          # Check for macOS DMG (must exist and be > 1MB)
+          DMG_FILE=$(find release -name "*.dmg" -type f -size +1M | head -1)
+          if [ -z "$DMG_FILE" ]; then
+            echo "❌ No .dmg file found or file is <= 1MB"
+            FAILED=1
+          else
+            echo "✅ DMG: $(ls -lh "$DMG_FILE")"
+          fi
+
+          # Check for Windows EXE (must exist and be > 1MB)
+          EXE_FILE=$(find release -name "*.exe" -type f -size +1M | head -1)
+          if [ -z "$EXE_FILE" ]; then
+            echo "❌ No .exe file found or file is <= 1MB"
+            FAILED=1
+          else
+            echo "✅ EXE: $(ls -lh "$EXE_FILE")"
+          fi
+
+          # Check for latest-mac.yml
+          if [ ! -f "$(find release -name 'latest-mac.yml' -type f | head -1)" ]; then
+            echo "❌ latest-mac.yml not found"
+            FAILED=1
+          else
+            echo "✅ latest-mac.yml found"
+          fi
+
+          # Check for latest.yml
+          if [ ! -f "$(find release -name 'latest.yml' -type f | head -1)" ]; then
+            echo "❌ latest.yml not found"
+            FAILED=1
+          else
+            echo "✅ latest.yml found"
+          fi
+
           echo ""
           echo "=== All release files ==="
           find release -type f -exec ls -lh {} \;
+
+          if [ "$FAILED" -eq 1 ]; then
+            echo ""
+            echo "❌ Release artifact verification failed. Aborting publish."
+            exit 1
+          fi
+          echo ""
+          echo "✅ All release artifact checks passed."
 
       - name: Extract tag name
         id: tag

@@ -8,7 +8,10 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout code
@@ -32,6 +35,9 @@ jobs:
       - name: Run unit tests
         run: npm run test:unit
 
-      # E2E tests are skipped in CI for now (can be run locally with: npm run test:e2e)
-      # They require additional setup (Xvfb, system dependencies) and can be added back later
+      - name: Install Playwright dependencies
+        run: npx playwright install --with-deps
+
+      - name: Run E2E tests
+        run: npm run test:e2e
 

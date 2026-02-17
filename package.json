@@ -32,7 +32,7 @@
     "electron-builder": "^25.1.8",
     "electron-log": "^5.2.0",
     "electron-vite": "^3.0.0",
-    "eslint": "^8.57.1",
+    "eslint": "^10.0.0",
     "eslint-config-prettier": "^10.0.1",
     "playwright": "^1.50.0",
     "prettier": "^3.4.2",

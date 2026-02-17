@@ -38,7 +38,7 @@
     "prettier": "^3.4.2",
     "typescript": "^5.7.3",
     "vite": "^6.1.0",
-    "vitest": "^2.1.8"
+    "vitest": "^4.0.18"
   },
   "build": {
     "appId": "com.realpomo.app",

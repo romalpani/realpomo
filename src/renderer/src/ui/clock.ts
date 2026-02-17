@@ -386,8 +386,8 @@ export function createPomodoroClock(options: ClockOptions) {
           // Calculate total height: content + padding + chrome
           const totalHeight = Math.ceil(contentHeight + padding + chromeH)
           
-          // Ensure minimum height of at least clock size + padding
-          const minHeight = 400 + padding
+          // Ensure minimum height of at least clock size + padding + chrome
+          const minHeight = 400 + padding + chromeH
           const newHeight = Math.max(minHeight, totalHeight)
           
           window.timerApi.requestResize(newHeight)

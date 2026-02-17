@@ -23,14 +23,14 @@ function createWindow(): BrowserWindow {
     useContentSize: true,
     resizable: false,
     show: false,
-    backgroundColor: '#0d4b2a',
+    backgroundColor: '#ffffff',
     title: 'RealPomo',
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
     ...(process.platform === 'win32'
       ? {
           titleBarOverlay: {
-            color: '#0d4b2a',
-            symbolColor: '#ffffff',
+            color: '#ffffff',
+            symbolColor: '#0d4b2a',
             height: 32
           }
         }

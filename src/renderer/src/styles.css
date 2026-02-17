@@ -14,11 +14,6 @@
   --pad: 0px;
   --chrome-h: 0px;
   --controls-h: 132px;
-  --glass: rgba(0, 0, 0, 0.28);
-  --glass-border: rgba(255, 255, 255, 0.14);
-  --glass-shadow: rgba(0, 0, 0, 0.22);
-  /* Keep the surface untinted; rely on blur + border + shadow for "liquid glass". */
-  --glass-surface: transparent;
 
   /* Color picker styles */
   --color-picker-shadow: rgba(0, 0, 0, 0.2);
@@ -74,13 +69,14 @@ body {
   width: 100%;
   height: 100%;
   border-radius: var(--unit-radius);
-  background: var(--glass-surface);
+  background: transparent;
   border: none;
   box-shadow: none;
   position: relative;
   isolation: isolate;
   overflow: visible;
   padding: var(--pad);
+  padding-top: var(--chrome-h);
   transition: box-shadow 180ms ease, border-color 180ms ease;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -89,7 +85,7 @@ body {
 
 .color-picker-container {
   position: absolute;
-  top: 12px;
+  top: calc(var(--chrome-h) + 12px);
   right: 12px;
   z-index: 100;
   -webkit-app-region: no-drag;

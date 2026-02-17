@@ -5,6 +5,11 @@ import { createPomodoroClock } from './ui/clock'
 import { createColorPicker, getStoredColor, COLOR_PRESETS } from './ui/color-picker'
 import { createUpdateNotification } from './ui/update-notification'
 
+// On Windows, account for the titlebar overlay height
+if (window.platform === 'win32') {
+  document.documentElement.style.setProperty('--chrome-h', '32px')
+}
+
 const host = document.getElementById('app')
 if (!host) throw new Error('App host missing')
 

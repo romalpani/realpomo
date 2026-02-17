@@ -35,3 +35,4 @@ const updateApi: UpdateApi = {
 
 contextBridge.exposeInMainWorld('timerApi', timerApi)
 contextBridge.exposeInMainWorld('updateApi', updateApi)
+contextBridge.exposeInMainWorld('platform', process.platform)

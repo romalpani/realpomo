@@ -1,7 +1,7 @@
 {
   "name": "realpomo",
   "private": true,
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "Minimal Pomodoro timer desktop app (Electron + Vite)",
   "author": "",
   "main": "dist/main/index.js",

@@ -956,6 +956,30 @@ Update structured data in `docs/index.html`:
 
 ---
 
+## Plan Review Feedback (Issue Response)
+
+The plan is strong, but a few gaps and edge cases should be tracked up-front so feature parity and release quality remain predictable.
+
+### Additional Requirements & Gaps
+- **Define supported OS versions** (iOS/Android) and explicit behavior when the OS suspends/kills the app.
+- **Persist active timer state** (start time + target duration) and restore on relaunch to avoid drift; handle device time changes, timezone shifts, and DST.
+- **Storage migration plan** from `localStorage` → AsyncStorage with schema versioning for future preference changes.
+- **Accessibility requirements** (VoiceOver/TalkBack labels, dynamic type, color contrast) to avoid later redesign.
+- **Privacy policy & crash reporting** decisions (e.g., Sentry) before App Store submission.
+- **Audio/notification rules** for silent mode, DND, and audio focus; confirm haptics can be disabled per device settings.
+
+### Edge Cases to Validate
+- App backgrounding, Doze mode, and low-power mode behavior on long timers.
+- Interruptions (phone calls, Bluetooth audio handoff) and notification delivery reliability.
+- Orientation changes, safe areas, and smallest device sizes (iPhone SE/compact Android).
+
+### Release & Process Improvements
+- **Versioning alignment** between Electron and mobile (semver + feature parity checklist).
+- **CI lanes** for iOS/Android signing, store metadata, and release gating with secret handling guidance.
+- **agent.md maintainer**: recommend assigning a “Release Captain” (repo owner or designated maintainer) plus a backup reviewer to keep parity checklists current.
+
+---
+
 ## Conclusion
 
 This plan provides a comprehensive roadmap for converting RealPomo to mobile while preserving all functionality and maintaining the existing Electron app. The recommended approach (React Native with shared core) maximizes code reuse, delivers native performance, and provides a clear path forward.
@@ -970,4 +994,3 @@ This plan provides a comprehensive roadmap for converting RealPomo to mobile whi
 - ✅ Website integration plan
 
 **Next step**: Review and approve this plan, then begin Phase 1 (monorepo setup and core extraction).
-

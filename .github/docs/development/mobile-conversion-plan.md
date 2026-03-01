@@ -962,6 +962,7 @@ The plan is strong, but a few gaps and edge cases should be tracked up-front so 
 
 ### Additional Requirements & Gaps
 - **Define supported OS versions** (iOS/Android) and explicit behavior when the OS suspends/kills the app.
+- **Explicitly document that mobile is additive** and the Electron desktop app remains supported and unchanged during the mobile rollout.
 - **Persist active timer state** (start time + target duration) and restore on relaunch to avoid drift; handle device time changes, timezone shifts, and DST.
 - **Storage migration plan** from `localStorage` → AsyncStorage with schema versioning for future preference changes.
 - **Accessibility requirements** (VoiceOver/TalkBack labels, dynamic type, color contrast) to avoid later redesign.

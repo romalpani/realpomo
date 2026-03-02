@@ -1,6 +1,8 @@
 import type { ClockColor } from '@realpomo/core'
-export { COLOR_PRESETS } from '@realpomo/core'
 import { COLOR_PRESETS } from '@realpomo/core'
+
+export type { ClockColor }
+export { COLOR_PRESETS }
 
 const STORAGE_KEY = 'realpomo-clock-color'
 

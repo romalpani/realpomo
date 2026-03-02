@@ -11,6 +11,10 @@ export type { ClockColor }
  * Persistence via AsyncStorage can be added as a follow-up.
  */
 
+/**
+ * Module-level color cache.  This is a temporary in-memory-only store;
+ * a follow-up should persist via AsyncStorage for cross-session recall.
+ */
 let cachedColor: ClockColor | null = null
 
 export function useColorPicker(initialColor?: ClockColor) {

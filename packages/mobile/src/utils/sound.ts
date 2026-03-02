@@ -9,6 +9,8 @@
  * simple.
  */
 
+// Lazily loaded so this module can be imported on web/test environments
+// where expo-haptics is unavailable.
 let Haptics: typeof import('expo-haptics') | null = null
 
 async function loadHaptics() {

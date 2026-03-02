@@ -37,8 +37,9 @@ const COLORS = {
   INVERT: 'rgba(255,255,255,0.92)'
 }
 
-export type { ClockColor } from '@realpomo/core'
 import type { ClockColor } from '@realpomo/core'
+
+export type { ClockColor }
 
 export function createPomodoroClock(options: ClockOptions) {
   const { host, maxSeconds, getSeconds, setSeconds, start, pause, canEdit, isRunning, onMinuteStep } = options

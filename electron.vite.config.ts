@@ -22,6 +22,11 @@ export default defineConfig({
     root: resolve(__dirname, 'src/renderer'),
     build: {
       outDir: resolve(__dirname, 'dist/renderer')
+    },
+    resolve: {
+      alias: {
+        '@realpomo/core': resolve(__dirname, 'packages/core/src')
+      }
     }
   }
 })

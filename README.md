@@ -51,6 +51,17 @@ Download the latest version from our [website](https://romalpani.github.io/realp
 
 ## Development
 
+### Project Structure
+
+RealPomo uses **npm workspaces** to share business logic across platforms:
+
+```
+packages/
+  core/     — Shared timer engine, clockwork math, time formatting, colors
+  mobile/   — React Native (Expo) app for iOS & Android
+src/          — Electron desktop app (unchanged)
+```
+
 ### Setup
 ```bash
 npm install
@@ -62,7 +73,40 @@ npm run dev
 - **Lint**: `npm run lint` (autofix: `npm run lint:fix`)
 - **Format**: `npm run format` (check only: `npm run format:check`)
 - **Unit tests**: `npm run test:unit` (watch: `npm run test:unit:watch`, coverage: `npm run test:unit:coverage`)
+- **Core tests**: `cd packages/core && npm test`
 - **E2E smoke test** (builds app bundles first): `npm run test:e2e`
+
+### Running the Mobile App
+
+The mobile app lives in `packages/mobile/` and uses **Expo** (React Native).
+
+#### Prerequisites
+- Node.js 18+
+- **iOS**: macOS with Xcode 15+ and an iOS Simulator
+- **Android**: Android Studio with an Android emulator
+- **Device testing**: Install the [Expo Go](https://expo.dev/go) app on your phone
+
+#### Quick Start
+```bash
+cd packages/mobile
+npm install
+npx expo start
+```
+
+Then:
+- Press **i** to open iOS Simulator
+- Press **a** to open Android Emulator
+- Scan the QR code with Expo Go on a physical device
+
+#### Testing Checklist for Mobile
+1. **Timer setting** — Tap a minute preset (5, 10, 15, 20, 25, 30, 45, 60) and verify the clock face updates
+2. **Start/Pause** — Tap Start, verify countdown runs; tap Pause, verify it stops
+3. **Reset** — Tap Reset, verify clock returns to 00:00
+4. **Timer completion** — Set 1 minute (or shortest), let it complete; verify haptic feedback fires
+5. **Background handling** — Start a timer, switch to another app, return; verify remaining time is accurate
+6. **Color picker** — Tap each color swatch and verify the clock face, sector, and controls update
+7. **Orientation** — Verify portrait orientation lock works correctly
+8. **Accessibility** — Enable VoiceOver/TalkBack and verify all buttons are labeled
 
 ## Build
 
@@ -79,11 +123,13 @@ npm run build:app
 ## Technology Stack
 
 - **Electron** - Cross-platform desktop framework
-- **Vite** - Fast build tool and dev server
+- **React Native (Expo)** - iOS & Android mobile framework
+- **Vite** - Fast build tool and dev server (desktop)
 - **TypeScript** - Type-safe development
 - **Vitest** - Unit testing
 - **Playwright** - E2E testing
-- **Web Audio API** - Audio feedback generation
+- **Web Audio API** - Audio feedback (desktop)
+- **expo-haptics** - Haptic feedback (mobile)
 
 ## License
 

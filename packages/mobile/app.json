@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "RealPomo",
+    "slug": "realpomo",
+    "version": "1.1.5",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FF6347"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.realpomo.mobile"
+    },
+    "android": {
+      "package": "com.realpomo.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#FF6347",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

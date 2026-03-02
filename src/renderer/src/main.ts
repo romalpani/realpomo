@@ -1,5 +1,5 @@
 import './styles.css'
-import { createTimerEngine } from './ui/timer'
+import { createTimerEngine } from '@realpomo/core'
 import { playDoneChime, playSetTick } from './ui/sound'
 import { createPomodoroClock } from './ui/clock'
 import { createColorPicker, getStoredColor, COLOR_PRESETS } from './ui/color-picker'

@@ -1,6 +1,8 @@
 # RealPomo
 
 A minimal Pomodoro-style timer desktop app inspired by the physical Time Timer dial. RealPomo provides a beautiful, distraction-free visual timer with an intuitive circular interface that shows remaining time at a glance.
+<img width="1104" height="1498" alt="image" src="https://github.com/user-attachments/assets/ebca7730-2ca6-483a-bd43-45440a6b4817" />
+
 
 ## Download
 

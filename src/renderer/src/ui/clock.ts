@@ -1,5 +1,4 @@
-import { clamp } from './math'
-import { formatTimerTime } from './time'
+import { clamp, formatTimerTime } from '@realpomo/core'
 import { playSetTick, playPencilClick } from './sound'
 import {
   createClockworkState,
@@ -12,7 +11,7 @@ import {
   secondsToAngle,
   snapToDetent,
   snapToDetentForCountdown
-} from './clockwork'
+} from '@realpomo/core'
 
 type ClockOptions = {
   host: HTMLElement
@@ -38,11 +37,9 @@ const COLORS = {
   INVERT: 'rgba(255,255,255,0.92)'
 }
 
-export type ClockColor = {
-  case: string
-  knob: string
-  sector: string
-}
+import type { ClockColor } from '@realpomo/core'
+
+export type { ClockColor }
 
 export function createPomodoroClock(options: ClockOptions) {
   const { host, maxSeconds, getSeconds, setSeconds, start, pause, canEdit, isRunning, onMinuteStep } = options

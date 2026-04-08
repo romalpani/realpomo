@@ -3,6 +3,9 @@
   "private": true,
   "version": "1.1.5",
   "description": "Minimal Pomodoro timer desktop app (Electron + Vite)",
+  "workspaces": [
+    "packages/*"
+  ],
   "author": "",
   "main": "dist/main/index.js",
   "scripts": {
